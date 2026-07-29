@@ -24,11 +24,19 @@ pnpm --version
 
 The output must be `v24.18.0` and `11.17.0`.
 
+Repository-level pnpm enforcement lives in `pnpm-workspace.yaml`.
+`engineStrict: true` rejects incompatible Node.js environments, while
+`pmOnFail: error` rejects an active pnpm version other than `11.17.0` instead
+of downloading or switching package managers.
+
 Install the repository from its committed lockfile:
 
 ```sh
 pnpm install --frozen-lockfile
 ```
+
+The generated `node_modules/` directory is ignored, so a successful
+installation does not dirty the repository's tracked state.
 
 No particular Node version manager is required. The committed `.tool-versions` file is available for tools that support it.
 

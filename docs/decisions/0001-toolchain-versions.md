@@ -3,6 +3,7 @@
 - Status: Accepted
 - Decision date: 2026-07-28
 - Last verified: 2026-07-28
+- Policy correction date: 2026-07-29
 
 ## Context
 
@@ -19,7 +20,23 @@ Use these exact repository tool versions:
 | Node.js | `24.18.0` | `.tool-versions` and `engines.node` |
 | pnpm | `11.17.0` | `packageManager` and `engines.pnpm` |
 
-`.npmrc` enables strict engine checking. A contributor whose active Node.js or pnpm version differs from the manifest receives an installation error rather than a warning.
+`pnpm-workspace.yaml` owns repository-level pnpm policy:
+
+```yaml
+engineStrict: true
+pmOnFail: error
+```
+
+`engineStrict: true` makes pnpm reject packages that are incompatible with the
+active Node.js version instead of proceeding after an engine warning.
+`pmOnFail: error` makes pnpm reject an active pnpm version that differs from
+the exact `packageManager` declaration. It disables pnpm 11's default
+`download` response, so pnpm cannot silently download or switch to the
+declared release.
+
+The policy file intentionally has no application workspace globs yet. It owns
+root pnpm settings during the standalone phase; later architecture work will
+expand it with `apps/*` and `libs/*`.
 
 Install pnpm explicitly with npm:
 
@@ -52,6 +69,7 @@ The planned Nx integrations also overlap with the reviewed framework releases: `
 - Node.js release status and exact LTS patch: [Node.js releases](https://nodejs.org/en/about/previous-releases) and [Node.js v24 archive](https://nodejs.org/en/download/archive/v24)
 - Node.js Corepack distribution status: [Node.js Corepack documentation](https://nodejs.org/download/release/latest-v22.x/docs/api/corepack.html)
 - pnpm installation, Node.js compatibility, and npm installation path: [pnpm installation](https://pnpm.io/installation)
+- pnpm 11 project settings, `engineStrict`, and `pmOnFail`: [pnpm settings](https://pnpm.io/settings)
 - pnpm exact release: [pnpm v11.17.0 release](https://github.com/pnpm/pnpm/releases/tag/v11.17.0)
 - Nx Node.js compatibility matrix: [Nx with Node.js](https://nx.dev/docs/technologies/node/introduction)
 - Nx exact release line: [Nx 23.1 release](https://nx.dev/blog/nx-23-1-release)
@@ -68,7 +86,11 @@ The planned Nx integrations also overlap with the reviewed framework releases: `
 ## Consequences
 
 - Developers and CI use the same exact Node.js and pnpm versions.
+- `pnpm-workspace.yaml` fails incompatible Node.js and pnpm environments at
+  the repository boundary.
 - Frozen installation is reproducible from `pnpm-lock.yaml`.
+- `node_modules/` is ignored, so installation does not create untracked
+  repository state.
 - A version manager may read `.tool-versions`, but asdf, mise, or any other manager remains optional.
 - Framework packages are deliberately absent until their production-plan tasks.
 - Future version changes require updating this ADR, every repository declaration, regenerating the lockfile with the selected pnpm version, and rerunning the complete compatibility verification.
