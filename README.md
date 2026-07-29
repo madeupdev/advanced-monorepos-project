@@ -102,6 +102,20 @@ runs.
 The Prisma client under `generated/prisma/`, local environment files, framework
 output, Playwright failure artifacts, and installed dependencies are ignored.
 
+## Continuous integration
+
+The inherited baseline CI runs frozen installation, lint, type-checking, unit
+tests, API integration tests, a production build, and the Chromium end-to-end
+journey as separate visible steps. It uses a PostgreSQL 17 service in GitHub
+Actions rather than introducing local Docker Compose before that course lesson,
+and it keeps the `madeup_video` development/build database separate from the
+guarded `madeup_video_test` test database.
+
+When Playwright fails, its screenshots and traces are available from the
+workflow run as the short-lived `playwright-failure-evidence` artifact. This is
+deliberately the pre-Nx baseline; affected execution, Nx caching, and
+dependency-aware CI arrive in later lessons.
+
 ## Environment checkpoint boundary
 
 PostgreSQL is developer-provided at this checkpoint. A reproducible Compose
