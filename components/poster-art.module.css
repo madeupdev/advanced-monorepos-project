@@ -1,0 +1,170 @@
+.poster {
+  --poster-dark: var(--color-ink);
+  --poster-light: var(--color-cream);
+  --poster-accent: var(--color-pink);
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  min-height: 22rem;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1.2rem;
+  border: 0.35rem solid var(--color-paper);
+  outline: 1px solid rgb(23 32 51 / 24%);
+  background: var(--poster-dark);
+  color: var(--poster-light);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 28%);
+}
+
+.poster::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background-image: radial-gradient(circle, rgb(255 255 255 / 18%) 0.7px, transparent 0.8px);
+  background-size: 5px 5px;
+  content: "";
+  opacity: 0.4;
+}
+
+.shapeOne,
+.shapeTwo {
+  position: absolute;
+  z-index: -1;
+  display: block;
+}
+
+.shapeOne {
+  top: 12%;
+  left: 12%;
+  width: 76%;
+  aspect-ratio: 1;
+  border: 0.8rem solid var(--poster-accent);
+  border-radius: 50%;
+}
+
+.shapeTwo {
+  top: 28%;
+  left: -15%;
+  width: 130%;
+  height: 22%;
+  border-block: 0.3rem solid var(--poster-light);
+  background: var(--poster-accent);
+  transform: rotate(-12deg);
+}
+
+.kicker {
+  margin-bottom: auto;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.title {
+  max-width: 12ch;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  line-height: 0.95;
+  text-wrap: balance;
+  text-transform: uppercase;
+}
+
+.spine {
+  position: absolute;
+  right: 0.65rem;
+  bottom: 0.65rem;
+  padding: 0.15rem 0.3rem;
+  border: 1px solid currentColor;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.midnightRewind {
+  --poster-dark: var(--color-ink);
+  --poster-light: var(--color-cream);
+  --poster-accent: var(--color-pink);
+}
+
+.midnightRewind .shapeOne {
+  border-radius: 0;
+  transform: rotate(45deg);
+}
+
+.signalLost {
+  --poster-dark: var(--color-teal);
+  --poster-light: var(--color-paper);
+  --poster-accent: var(--color-gold);
+}
+
+.signalLost .shapeOne {
+  top: 17%;
+  border-width: 0.25rem;
+  box-shadow: 0 0 0 1rem rgb(23 32 51 / 20%), 0 0 0 2rem rgb(255 250 240 / 15%);
+}
+
+.weekendAtOrion {
+  --poster-dark: var(--color-gold);
+  --poster-light: var(--color-ink);
+  --poster-accent: var(--color-cream);
+}
+
+.weekendAtOrion .shapeOne {
+  width: 42%;
+  border-radius: 0.4rem;
+  transform: rotate(12deg);
+}
+
+.lastMatinee {
+  --poster-dark: var(--color-ink);
+  --poster-light: var(--color-paper);
+  --poster-accent: var(--color-gold);
+}
+
+.lastMatinee .shapeTwo {
+  top: 15%;
+  left: 18%;
+  width: 64%;
+  height: 42%;
+  border: 0.35rem solid var(--poster-accent);
+  background: transparent;
+  transform: none;
+}
+
+.rentalHearts {
+  --poster-dark: var(--color-pink);
+  --poster-light: var(--color-paper);
+  --poster-accent: var(--color-gold);
+}
+
+.rentalHearts .shapeOne {
+  width: 58%;
+  border-radius: 50% 50% 45% 45%;
+  transform: rotate(-18deg);
+}
+
+.staticSummer {
+  --poster-dark: var(--color-teal);
+  --poster-light: var(--color-cream);
+  --poster-accent: var(--color-pink);
+}
+
+.staticSummer .shapeOne {
+  top: 9%;
+  left: 38%;
+  width: 54%;
+  border-width: 1rem;
+}
+
+.staticSummer .shapeTwo {
+  top: 42%;
+  transform: rotate(8deg);
+}
+
+.fallback {
+  --poster-dark: var(--color-ink);
+  --poster-light: var(--color-paper);
+  --poster-accent: var(--color-teal);
+}

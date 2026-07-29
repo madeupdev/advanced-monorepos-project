@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum CopyStatus {
+  AVAILABLE
+  RENTED
+}
+
+model Title {
+  id             String         @id
+  slug           String         @unique
+  name           String
+  synopsis       String
+  releaseYear    Int
+  genre          String
+  certificate    String
+  runtimeMinutes Int
+  artworkKey     String
+  copies         PhysicalCopy[]
+}
+
+model PhysicalCopy {
+  id      String     @id
+  barcode String     @unique
+  status  CopyStatus @default(AVAILABLE)
+  titleId String
+  title   Title      @relation(fields: [titleId], references: [id])
+  rentals Rental[]
+
+  @@index([titleId, status])
+}
+
+model Rental {
+  id           String       @id @default(cuid())
+  copyId       String
+  copy         PhysicalCopy @relation(fields: [copyId], references: [id])
+  customerName String
+  rentedAt     DateTime     @default(now())
+  dueAt        DateTime
+  returnedAt   DateTime?
+
+  @@index([returnedAt])
+}

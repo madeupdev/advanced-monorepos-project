@@ -1,1 +1,7 @@
 node_modules/
+.next/
+coverage/
+generated/prisma/
+*.tsbuildinfo
+.env
+.env.local

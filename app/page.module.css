@@ -1,0 +1,91 @@
+.hero {
+  padding-block: clamp(3.5rem, 10vw, 7rem);
+  border-bottom: 1px solid var(--color-border);
+  background:
+    linear-gradient(118deg, transparent 0 58%, rgb(196 70 116 / 16%) 58% 72%, transparent 72%),
+    var(--color-cream);
+}
+
+.heroInner {
+  display: grid;
+  align-items: end;
+  gap: 2rem;
+}
+
+.hero h1 {
+  max-width: 10ch;
+  margin-bottom: 1rem;
+}
+
+.heroCopy {
+  max-width: 37rem;
+  margin-bottom: 0;
+  font-size: clamp(1.15rem, 2.5vw, 1.4rem);
+}
+
+.rentalLabel {
+  max-width: 20rem;
+  padding: 1.4rem;
+  border: 2px solid var(--color-ink);
+  border-radius: var(--radius-medium);
+  background: var(--color-paper);
+  box-shadow: 0.5rem 0.5rem 0 var(--color-pink);
+  transform: rotate(1.5deg);
+}
+
+.rentalLabel strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  line-height: 1.05;
+}
+
+.rentalLabel span {
+  display: block;
+  margin-top: 0.75rem;
+}
+
+.catalogue {
+  padding-block: clamp(3.5rem, 8vw, 6rem);
+}
+
+.sectionHeading {
+  display: grid;
+  margin-bottom: 2rem;
+  gap: 0.5rem 2rem;
+}
+
+.sectionHeading h2,
+.sectionHeading p {
+  margin-bottom: 0;
+}
+
+.sectionHeading p {
+  max-width: 36rem;
+}
+
+.grid {
+  display: grid;
+  padding: 0;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  list-style: none;
+}
+
+.empty {
+  padding: 2rem;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-paper);
+}
+
+@media (min-width: 48rem) {
+  .heroInner {
+    grid-template-columns: minmax(0, 1.8fr) minmax(15rem, 0.8fr);
+  }
+
+  .sectionHeading {
+    align-items: end;
+    grid-template-columns: 1fr 1fr;
+  }
+}

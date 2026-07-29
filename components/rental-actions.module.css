@@ -1,0 +1,52 @@
+.action {
+  display: grid;
+  margin-top: 1rem;
+  gap: 0.6rem;
+}
+
+.primary,
+.secondary {
+  min-height: 3.25rem;
+  padding: 0.75rem 1.2rem;
+  border: 2px solid var(--color-ink);
+  border-radius: var(--radius-small);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary {
+  background: var(--color-pink);
+  color: var(--color-paper);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--color-ink);
+}
+
+.secondary {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--color-gold);
+}
+
+.primary:disabled,
+.secondary:disabled {
+  cursor: not-allowed;
+  opacity: 0.66;
+}
+
+.message {
+  min-height: 1.6rem;
+}
+
+.message a {
+  font-weight: 700;
+}
+
+.error {
+  color: var(--color-error);
+  font-weight: 700;
+}

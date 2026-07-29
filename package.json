@@ -1,10 +1,46 @@
 {
-  "name": "advanced-monorepos-project",
+  "name": "@madeup-video/storefront",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "pnpm db:generate && next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "pnpm db:generate && tsc --noEmit",
+    "test:unit": "vitest run tests/unit",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "pnpm db:generate && prisma db seed"
+  },
   "packageManager": "pnpm@11.17.0",
   "engines": {
     "node": "24.18.0",
     "pnpm": "11.17.0"
+  },
+  "dependencies": {
+    "@fontsource/archivo-black": "^5.3.0",
+    "@fontsource/atkinson-hyperlegible": "^5.3.0",
+    "@prisma/adapter-pg": "7.7.0",
+    "@prisma/client": "7.7.0",
+    "dotenv": "^17.4.2",
+    "next": "16.2.9",
+    "pg": "^8.22.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@types/pg": "^8.20.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "16.2.9",
+    "prisma": "7.7.0",
+    "tsx": "^4.23.1",
+    "typescript": "^6.0.2",
+    "vitest": "4.1.7"
   }
 }

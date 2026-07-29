@@ -1,0 +1,39 @@
+.page {
+  min-height: 60vh;
+  padding-block: clamp(3rem, 8vw, 6rem);
+}
+
+.heading {
+  display: grid;
+  margin-bottom: 2.5rem;
+  gap: 0.5rem;
+}
+
+.heading h1,
+.heading p {
+  margin-bottom: 0;
+}
+
+.heading h1 {
+  font-size: clamp(2.5rem, 8vw, 5rem);
+}
+
+.heading p {
+  max-width: 38rem;
+  font-size: 1.15rem;
+}
+
+.empty {
+  max-width: 42rem;
+  padding: clamp(1.5rem, 5vw, 3rem);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-paper);
+}
+
+.empty a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  font-weight: 700;
+}
