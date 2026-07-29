@@ -72,15 +72,35 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Verification commands
 
+Create a separate test database named `madeup_video_test`, copy
+`.env.test.example` to `.env.test`, and adjust its connection details if
+required. The test harness rejects missing, malformed, non-test, and normal
+development-database URLs before it can reset data.
+
+Install the one browser used by the inherited end-to-end journey:
+
+```sh
+pnpm exec playwright install chromium
+```
+
 ```sh
 pnpm lint
 pnpm typecheck
 pnpm test:unit
+pnpm test:integration
+pnpm test:e2e
+pnpm test:all
 pnpm build
 ```
 
+Unit and integration tests are separate Vitest projects. Database-backed
+integration files run sequentially against the dedicated test database. The
+single Playwright journey starts its own Next.js server on port `3100`, uses one
+Chromium worker with no retries, and resets the same test fixtures before it
+runs.
+
 The Prisma client under `generated/prisma/`, local environment files, framework
-output, and installed dependencies are ignored.
+output, Playwright failure artifacts, and installed dependencies are ignored.
 
 ## Environment checkpoint boundary
 

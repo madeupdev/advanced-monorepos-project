@@ -2,6 +2,10 @@ node_modules/
 .next/
 coverage/
 generated/prisma/
+next-env.d.ts
+playwright-report/
+test-results/
 *.tsbuildinfo
 .env
 .env.local
+.env.test

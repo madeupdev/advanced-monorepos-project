@@ -8,8 +8,12 @@
     "build": "pnpm db:generate && next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "pnpm db:generate && tsc --noEmit",
-    "test:unit": "vitest run tests/unit",
+    "typecheck": "pnpm db:generate && next typegen && tsc --noEmit",
+    "test": "pnpm test:all",
+    "test:all": "pnpm test:unit && pnpm test:integration && pnpm test:e2e",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "tsx tests/helpers/prepare-test-database.ts && vitest run --project integration",
+    "test:e2e": "tsx tests/helpers/prepare-test-database.ts && playwright test",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "pnpm db:generate && prisma db seed"
@@ -32,6 +36,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "1.62.0",
     "@types/node": "^24.13.3",
     "@types/pg": "^8.20.0",
     "@types/react": "^19.2.17",
