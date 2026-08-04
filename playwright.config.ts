@@ -1,5 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
-import { testDatabaseUrl } from "./tests/helpers/environment";
+import { testDatabaseUrl } from "./tests/helpers/environment.ts";
 
 export default defineConfig({
   testDir: "./tests/e2e",

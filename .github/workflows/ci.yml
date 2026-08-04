@@ -61,25 +61,25 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Lint
-        run: pnpm lint
+        run: pnpm exec nx lint @madeup-video/storefront
 
       - name: Type-check
-        run: pnpm typecheck
+        run: pnpm exec nx typecheck @madeup-video/storefront
 
       - name: Local environment tooling tests
-        run: pnpm test:tooling
+        run: pnpm exec nx test:tooling @madeup-video/storefront
 
       - name: Unit tests
-        run: pnpm test:unit
+        run: pnpm exec nx test:unit @madeup-video/storefront
 
       - name: Integration tests
-        run: pnpm test:integration
+        run: pnpm exec nx test:integration @madeup-video/storefront
 
       - name: Production build
-        run: pnpm build
+        run: pnpm exec nx build @madeup-video/storefront
 
       - name: End-to-end tests
-        run: pnpm test:e2e
+        run: pnpm exec nx test:e2e @madeup-video/storefront
 
       - name: Upload Playwright failure evidence
         if: failure()

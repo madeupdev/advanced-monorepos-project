@@ -11,6 +11,14 @@ import {
   getCourseVolumeName,
 } from "../../scripts/lib/local-environment.mjs";
 
+for (const variableName of [
+  "POSTGRES_PORT",
+  "DATABASE_URL",
+  "TEST_DATABASE_URL",
+]) {
+  delete process.env[variableName];
+}
+
 const compose = {
   command: "docker",
   prefix: ["compose"],
