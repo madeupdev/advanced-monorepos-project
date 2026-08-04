@@ -66,6 +66,9 @@ jobs:
       - name: Type-check
         run: pnpm typecheck
 
+      - name: Local environment tooling tests
+        run: pnpm test:tooling
+
       - name: Unit tests
         run: pnpm test:unit
 

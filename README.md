@@ -152,21 +152,30 @@ migrations and prepare that database when those tests run. The harness
 continues to reject missing, malformed, non-test, and normal development URLs
 before it can reset data.
 
-Application setup and browser-test setup are deliberately separate. Install
-the one browser used by the inherited end-to-end journey once:
+Application setup and browser-test setup are deliberately separate. On macOS
+and Windows, install the one browser used by the inherited end-to-end journey
+once:
 
 ```sh
 pnpm exec playwright install chromium
 ```
 
-`pnpm test:all` requires this browser installation. Platform-specific browser
-dependency guidance is completed with the L04 safety-net integration.
+On Linux and WSL, install Chromium with its required system dependencies:
+
+```sh
+pnpm exec playwright install --with-deps chromium
+```
+
+`pnpm test:all` requires this browser installation. The focused Section 2
+environment checks—`pnpm run db:config`, `pnpm run db:status`,
+`pnpm run db:check`, and `pnpm test:tooling`—do not require Playwright setup.
 
 Run individual checks or the complete test suite:
 
 ```sh
 pnpm lint
 pnpm typecheck
+pnpm test:tooling
 pnpm test:unit
 pnpm test:integration
 pnpm test:e2e
