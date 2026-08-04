@@ -4,7 +4,7 @@ Made Up Video is a fictional independent physical-video-rental shop and the
 inherited application for **Advanced Monorepos: Evolve a Production TypeScript
 App with Nx**.
 
-This checkpoint is intentionally one standalone Next.js App Router application.
+This state is intentionally one standalone Next.js App Router application.
 It supports browsing six original films, viewing title details, renting an
 available physical copy as member Jamie Vega, viewing active rentals, and
 returning a copy.
@@ -13,7 +13,7 @@ returning a copy.
 
 - Node.js `24.18.0`
 - pnpm `11.17.0`
-- A developer-provided PostgreSQL database
+- Docker with Docker Compose v2
 
 Install Node.js from the [official Node.js download page](https://nodejs.org/en/download)
 or with a version manager of your choice. Install the exact pnpm release without
@@ -33,6 +33,20 @@ pnpm --version
 The output must be `v24.18.0` and `11.17.0`. Repository-level pnpm enforcement
 lives in `pnpm-workspace.yaml`.
 
+Confirm that Docker is running and that either supported Compose v2 form is
+available:
+
+```sh
+docker version
+docker compose version
+```
+
+If the Compose plugin form is unavailable, use standalone Compose v2:
+
+```sh
+docker-compose version
+```
+
 ## Local setup
 
 Install the committed dependencies:
@@ -47,9 +61,22 @@ Copy the example environment file:
 cp .env.example .env
 ```
 
-Create the `madeup_video` database in your own PostgreSQL service and update
-`DATABASE_URL` in `.env` if its host, port, database name, or credentials differ
-from the example.
+The committed Compose definition supplies PostgreSQL 17 on normal host port
+`5432`. Start only that external-infrastructure service with the Compose
+plugin:
+
+```sh
+docker compose --project-name madeup-video --file compose.yaml --project-directory . up --detach postgres
+```
+
+Or use the standalone Compose v2 form:
+
+```sh
+docker-compose --project-name madeup-video --file compose.yaml --project-directory . up --detach postgres
+```
+
+If you change `POSTGRES_PORT` in `.env`, update `DATABASE_URL` to the same host
+port before applying migrations.
 
 Generate the Prisma client, apply the migration, and load the deterministic
 fixtures:
@@ -107,20 +134,24 @@ output, Playwright failure artifacts, and installed dependencies are ignored.
 The inherited baseline CI runs frozen installation, lint, type-checking, unit
 tests, API integration tests, a production build, and the Chromium end-to-end
 journey as separate visible steps. It uses a PostgreSQL 17 service in GitHub
-Actions rather than introducing local Docker Compose before that course lesson,
-and it keeps the `madeup_video` development/build database separate from the
-guarded `madeup_video_test` test database.
+Actions rather than local Compose orchestration, and it keeps the
+`madeup_video` development/build database separate from the guarded
+`madeup_video_test` test database.
 
 When Playwright fails, its screenshots and traces are available from the
 workflow run as the short-lived `playwright-failure-evidence` artifact. This is
 deliberately the pre-Nx baseline; affected execution, Nx caching, and
 dependency-aware CI arrive in later lessons.
 
-## Environment checkpoint boundary
+## Local ownership boundary
 
-PostgreSQL is developer-provided at this checkpoint. A reproducible Compose
-workflow is intentionally introduced in a later course lesson; this repository
-does not include `compose.yaml` yet.
+The committed `compose.yaml` contains only PostgreSQL 17; it does not contain
+the storefront or another application service. PostgreSQL is independently
+controlled external infrastructure, so restarting the repository-owned
+Next.js process does not recreate the database. Compose publishes port `5432`
+by default and preserves data in its named volume. Later project states add
+focused repository commands around this boundary; this state uses the explicit
+Compose v2 commands shown above.
 
 ## Toolchain decision
 
