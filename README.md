@@ -4,8 +4,8 @@ Made Up Video is a fictional independent physical-video-rental shop and the
 inherited application for **Advanced Monorepos: Evolve a Production TypeScript
 App with Nx**.
 
-This state is intentionally one standalone Next.js App Router application.
-It supports browsing six original films, viewing title details, renting an
+This state is intentionally one standalone Next.js App Router application. It
+supports browsing six original films, viewing title details, renting an
 available physical copy as member Jamie Vega, viewing active rentals, and
 returning a copy.
 
@@ -31,65 +31,68 @@ pnpm --version
 ```
 
 The output must be `v24.18.0` and `11.17.0`. Repository-level pnpm enforcement
-lives in `pnpm-workspace.yaml`.
+lives in `pnpm-workspace.yaml`. asdf and mise are optional ways to activate the
+declared versions; neither is required.
 
-Confirm that Docker is running and that either supported Compose v2 form is
-available:
+Confirm that Docker is running:
 
 ```sh
 docker version
+```
+
+Then confirm either supported Compose v2 form. Use the plugin form when it is
+available:
+
+```sh
 docker compose version
 ```
 
-If the Compose plugin form is unavailable, use standalone Compose v2:
+If that command is unavailable, use the standalone v2 form:
 
 ```sh
 docker-compose version
 ```
 
+Repository-owned database commands detect either form. Docker installation and
+administration are outside this project's scope.
+
+## Local ownership boundary
+
+Docker Compose owns one external-infrastructure process: PostgreSQL 17. The
+storefront, Prisma commands, tests, and seed process remain repository-owned
+Node.js processes. PostgreSQL therefore starts and stops independently from
+`pnpm dev`; restarting the storefront does not recreate the database.
+
+Compose creates one named data volume, `madeup-video_postgres-data`. The
+credentials in `compose.yaml` and the committed environment examples are
+non-secret local-development values. Do not reuse them for a deployed
+environment.
+
+Repository commands pin the absolute committed `compose.yaml`, project
+directory, and validated `madeup-video` project identity. Compose variables in
+`.env` or the process environment, plus automatic override files, cannot
+redirect those commands. Controlled isolated verification can select a
+namespaced identity through `COURSE_COMPOSE_PROJECT_NAME`; `POSTGRES_PORT`
+remains the supported local override.
+
 ## Local setup
 
-Install the committed dependencies:
+From a clean checkout, run the complete setup:
 
 ```sh
-pnpm install --frozen-lockfile
+pnpm run setup
 ```
 
-Copy the example environment file:
+Setup validates Node, pnpm, Docker, the Docker daemon, Compose v2, and the local
+database URLs. It preserves existing `.env` and `.env.test` files, copies the
+committed examples only when either file is absent, installs the frozen
+dependency graph, starts PostgreSQL, and waits for it to become healthy. It
+then ensures that both `madeup_video` and `madeup_video_test` exist and
+generates the Prisma client. It applies committed migrations to the development
+database and loads its deterministic fixtures.
 
-```sh
-cp .env.example .env
-```
-
-The committed Compose definition supplies PostgreSQL 17 on normal host port
-`5432`. Start only that external-infrastructure service with the Compose
-plugin:
-
-```sh
-docker compose --project-name madeup-video --file compose.yaml --project-directory . up --detach postgres
-```
-
-Or use the standalone Compose v2 form:
-
-```sh
-docker-compose --project-name madeup-video --file compose.yaml --project-directory . up --detach postgres
-```
-
-If you change `POSTGRES_PORT` in `.env`, update `DATABASE_URL` to the same host
-port before applying migrations.
-
-Generate the Prisma client, apply the migration, and load the deterministic
-fixtures:
-
-```sh
-pnpm db:generate
-pnpm db:migrate
-pnpm db:seed
-```
-
-The seed resets rental data and creates six titles with fifteen physical copies.
-
-Start the storefront:
+Setup is idempotent and does not start the persistent Next.js development
+process. Start the storefront separately:
 
 ```sh
 pnpm dev
@@ -97,18 +100,69 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+The deterministic seed contains six titles, fifteen physical copies, and no
+rentals.
+
+## Focused database commands
+
+Use the narrowest command that matches the job:
+
+```sh
+pnpm run db:check
+pnpm run db:config
+pnpm run db:start
+pnpm run db:status
+pnpm run db:logs
+pnpm run db:stop
+pnpm run db:migrate
+pnpm run db:seed
+```
+
+`db:check` reports both course databases and deterministic seed counts without
+requiring a Compose command form. `db:config` validates and displays the pinned
+PostgreSQL-only Compose configuration through whichever Compose v2 form is
+installed. `db:status` shows the PostgreSQL service state, and `db:logs`
+displays its fifty most recent log lines.
+
+`db:start` starts PostgreSQL and waits for readiness. Running it again is safe.
+`db:stop` stops only the PostgreSQL service and preserves
+`madeup-video_postgres-data`. `db:migrate` applies the migrations already
+committed to `prisma/migrations/`. `db:seed` deterministically restores the six
+titles and fifteen copies and clears rental data.
+
+Reset is deliberately separate and visibly destructive:
+
+```sh
+pnpm run db:reset -- --yes
+```
+
+The command refuses to run without `--yes`. Before mutation it validates the
+toolchain, local database configuration, pinned Compose definition, and exact
+volume ownership labels. Only after preflight succeeds does it remove
+`madeup-video_postgres-data`, recreate PostgreSQL, apply the committed
+migrations, and reseed the development database. It does not derive the
+deletion target from `DATABASE_URL`, scan for arbitrary Docker volumes, or
+affect unrelated containers and volumes.
+
 ## Verification commands
 
-Create a separate test database named `madeup_video_test`, copy
-`.env.test.example` to `.env.test`, and adjust its connection details if
-required. The test harness rejects missing, malformed, non-test, and normal
-development-database URLs before it can reset data.
+Setup creates the dedicated `madeup_video_test` database without preparing its
+schema or fixtures. The integration and end-to-end harnesses apply committed
+migrations and prepare that database when those tests run. The harness
+continues to reject missing, malformed, non-test, and normal development URLs
+before it can reset data.
 
-Install the one browser used by the inherited end-to-end journey:
+Application setup and browser-test setup are deliberately separate. Install
+the one browser used by the inherited end-to-end journey once:
 
 ```sh
 pnpm exec playwright install chromium
 ```
+
+`pnpm test:all` requires this browser installation. Platform-specific browser
+dependency guidance is completed with the L04 safety-net integration.
+
+Run individual checks or the complete test suite:
 
 ```sh
 pnpm lint
@@ -129,29 +183,46 @@ runs.
 The Prisma client under `generated/prisma/`, local environment files, framework
 output, Playwright failure artifacts, and installed dependencies are ignored.
 
+## Setup recovery
+
+- **Docker executable missing:** Install Docker with Compose v2 and rerun
+  `pnpm run setup`.
+- **Docker daemon unavailable:** Start Docker, confirm `docker version` shows a
+  server, and rerun the command.
+- **Compose unavailable:** Enable the Compose v2 plugin or provide the
+  standalone Compose v2 command.
+- **Missing environment file:** Rerun `pnpm run setup`; an existing file is
+  never overwritten.
+- **Invalid database URL:** Compare `.env` with `.env.example` and `.env.test`
+  with `.env.test.example`. Keep the exact course database names and separate
+  the development and test databases.
+- **Port 5432 already in use:** In `.env`, set `POSTGRES_PORT` to an available
+  port and update `DATABASE_URL` to match. In `.env.test`, update
+  `TEST_DATABASE_URL` to that same port. This works in POSIX shells,
+  PowerShell, and Command Prompt without a shell-specific environment command.
+  Do not stop an unrelated database merely to free the port.
+- **PostgreSQL does not become healthy:** The readiness error includes recent
+  PostgreSQL logs. Run `pnpm run db:logs` for a fresh view, correct the reported
+  startup problem, and rerun `pnpm run db:start`.
+
+The root commands use Node.js built-ins and argument arrays rather than
+shell-specific interpolation, so the same workflow applies in macOS and Linux
+terminals, Windows PowerShell, and WSL where Node, pnpm, Docker, and Compose v2
+are available.
+
 ## Continuous integration
 
 The inherited baseline CI runs frozen installation, lint, type-checking, unit
 tests, API integration tests, a production build, and the Chromium end-to-end
-journey as separate visible steps. It uses a PostgreSQL 17 service in GitHub
-Actions rather than local Compose orchestration, and it keeps the
-`madeup_video` development/build database separate from the guarded
-`madeup_video_test` test database.
+journey as separate visible steps. It continues to use a PostgreSQL 17 GitHub
+Actions service rather than Compose and keeps the `madeup_video`
+development/build database separate from the guarded `madeup_video_test` test
+database.
 
 When Playwright fails, its screenshots and traces are available from the
 workflow run as the short-lived `playwright-failure-evidence` artifact. This is
 deliberately the pre-Nx baseline; affected execution, Nx caching, and
 dependency-aware CI arrive in later lessons.
-
-## Local ownership boundary
-
-The committed `compose.yaml` contains only PostgreSQL 17; it does not contain
-the storefront or another application service. PostgreSQL is independently
-controlled external infrastructure, so restarting the repository-owned
-Next.js process does not recreate the database. Compose publishes port `5432`
-by default and preserves data in its named volume. Later project states add
-focused repository commands around this boundary; this state uses the explicit
-Compose v2 commands shown above.
 
 ## Toolchain decision
 
