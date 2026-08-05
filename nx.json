@@ -12,6 +12,9 @@
     "test": {
       "cache": false
     },
+    "e2e": {
+      "cache": false
+    },
     "lint": {
       "cache": true
     }

@@ -156,6 +156,16 @@ test("the pnpm workspace explicitly includes the root package", async () => {
   assert.match(workspace, /^packages:\s*\n\s+- \.\s*$/mu);
 });
 
+test("environment-sensitive test targets are never replayed from cache", async () => {
+  const nxConfigPath = fileURLToPath(
+    new URL("../../nx.json", import.meta.url),
+  );
+  const nxConfig = JSON.parse(await readFile(nxConfigPath, "utf8"));
+
+  assert.equal(nxConfig.targetDefaults.test.cache, false);
+  assert.equal(nxConfig.targetDefaults.e2e.cache, false);
+});
+
 async function createEnvironmentFiles({
   developmentUrl = "postgresql://postgres:postgres@localhost:5432/madeup_video?schema=public",
   testUrl = "postgresql://postgres:postgres@localhost:5432/madeup_video_test?schema=public",
