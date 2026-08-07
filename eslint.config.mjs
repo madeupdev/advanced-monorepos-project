@@ -7,6 +7,7 @@ export default defineConfig([
   ...nextTypeScript,
   globalIgnores([
     ".next/**",
+    ".nx/**",
     "coverage/**",
     "generated/prisma/**",
     "next-env.d.ts",
