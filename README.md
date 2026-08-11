@@ -237,3 +237,10 @@ dependency-aware CI arrive in later lessons.
 
 See [ADR 0001](docs/decisions/0001-toolchain-versions.md) for the selected
 versions, compatibility analysis, and official sources.
+
+## License
+
+This software is available for noncommercial use under the
+[PolyForm Noncommercial License 1.0.0](LICENSE.md).
+
+Required Notice: Copyright 2026 Robert Donnelly.
