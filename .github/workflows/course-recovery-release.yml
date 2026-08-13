@@ -1,0 +1,212 @@
+name: Rehearse immutable course recovery assets
+
+on:
+  workflow_dispatch:
+    inputs:
+      course_version:
+        description: Exact course version (for example 1.0.0)
+        required: true
+        type: string
+      authoring_commit:
+        description: Exact 40-character authoring commit SHA
+        required: true
+        type: string
+      cli_version:
+        description: Exact published CLI version (for example 0.1.0)
+        required: true
+        type: string
+      cli_tag:
+        description: Exact CLI release tag aligned to cli_version
+        required: true
+        type: string
+      cli_sha256:
+        description: Exact lowercase SHA-256 of the CLI release tarball
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  rehearse:
+    name: Build and verify without publishing
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: course-release
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: course_recovery
+      PGPASSWORD: recovery-${{ github.run_id }}-${{ github.run_attempt }}
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: course_recovery
+          POSTGRES_PASSWORD: recovery-${{ github.run_id }}-${{ github.run_attempt }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready --username=course_recovery --dbname=postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    steps:
+      - name: Set up exact Node.js runtime
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+
+      - name: Validate exact dispatch inputs
+        env:
+          COURSE_VERSION: ${{ inputs.course_version }}
+          AUTHORING_COMMIT: ${{ inputs.authoring_commit }}
+          CLI_VERSION: ${{ inputs.cli_version }}
+          CLI_TAG: ${{ inputs.cli_tag }}
+          CLI_SHA256: ${{ inputs.cli_sha256 }}
+        run: |
+          node --input-type=module --eval '
+            const semver = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+            const commit = /^[a-f0-9]{40}$/;
+            const digest = /^[a-f0-9]{64}$/;
+            const { COURSE_VERSION: courseVersion, AUTHORING_COMMIT: authoringCommit,
+              CLI_VERSION: cliVersion, CLI_TAG: cliTag, CLI_SHA256: cliSha256 } = process.env;
+            if (!semver.test(courseVersion ?? "")) throw new Error("Invalid exact course version");
+            if (!commit.test(authoringCommit ?? "")) throw new Error("Invalid exact authoring commit");
+            if (!semver.test(cliVersion ?? "")) throw new Error("Invalid exact CLI version");
+            if (cliTag !== `v${cliVersion}`) throw new Error("CLI tag does not match CLI version");
+            if (!digest.test(cliSha256 ?? "")) throw new Error("Invalid exact CLI SHA-256");
+          '
+          {
+            echo "COURSE_VERSION=$COURSE_VERSION"
+            echo "AUTHORING_COMMIT=$AUTHORING_COMMIT"
+            echo "CLI_VERSION=$CLI_VERSION"
+            echo "CLI_TAG=$CLI_TAG"
+            echo "CLI_SHA256=$CLI_SHA256"
+            echo "CLI_ASSET=madeup-video-course-${CLI_VERSION}.tgz"
+            echo "CLI_TARBALL=${RUNNER_TEMP}/madeup-video-course-${CLI_VERSION}.tgz"
+            echo "CLI_INSTALL_DIRECTORY=${RUNNER_TEMP}/course-cli-install"
+            echo "RECOVERY_BUNDLE=${RUNNER_TEMP}/course-recovery-bundle"
+          } >> "$GITHUB_ENV"
+
+      - name: Check out canonical student project with full history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          path: project
+          persist-credentials: false
+
+      - name: Fetch canonical student-project main
+        working-directory: project
+        run: git fetch --no-tags origin main:refs/remotes/origin/main
+
+      - name: Check out exact private authoring commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: madeupdev/advanced-monorepos-course-authoring
+          ref: ${{ inputs.authoring_commit }}
+          token: ${{ secrets.AUTHORING_READ_TOKEN }}
+          fetch-depth: 0
+          path: authoring
+          persist-credentials: false
+
+      - name: Resolve authoring commit and prove canonical-main ancestry
+        working-directory: authoring
+        env:
+          AUTHORING_COMMIT: ${{ inputs.authoring_commit }}
+          AUTHORING_READ_TOKEN: ${{ secrets.AUTHORING_READ_TOKEN }}
+          ASKPASS_PATH: ${{ runner.temp }}/course-authoring-askpass.sh
+        run: |
+          test "$(git rev-parse --verify 'HEAD^{commit}')" = "$AUTHORING_COMMIT"
+          printf '%s\n' \
+            '#!/bin/sh' \
+            'case "$1" in' \
+            '  *Username*) printf "%s\n" "x-access-token" ;;' \
+            '  *Password*) printf "%s\n" "$AUTHORING_READ_TOKEN" ;;' \
+            '  *) exit 1 ;;' \
+            'esac' > "$ASKPASS_PATH"
+          chmod 700 "$ASKPASS_PATH"
+          GIT_ASKPASS="$ASKPASS_PATH" GIT_TERMINAL_PROMPT=0 \
+            git fetch --no-tags origin main:refs/remotes/origin/main
+          git merge-base --is-ancestor "$AUTHORING_COMMIT" origin/main
+
+      - name: Enable exact pnpm runtime
+        run: |
+          corepack enable
+          corepack install --global pnpm@11.17.0
+
+      - name: Install rehearsal dependencies from the project lockfile
+        run: pnpm --dir project install --frozen-lockfile
+
+      - name: Download exact fixed-repository CLI asset
+        run: >-
+          curl --fail --location --proto '=https' --tlsv1.2
+          --output "$CLI_TARBALL"
+          "https://github.com/madeupdev/madeup-video-course-cli/releases/download/${CLI_TAG}/${CLI_ASSET}"
+
+      - name: Verify exact CLI tarball SHA-256
+        run: |
+          node --input-type=module --eval '
+            import { createHash } from "node:crypto";
+            import { readFileSync } from "node:fs";
+            const actual = createHash("sha256").update(readFileSync(process.env.CLI_TARBALL)).digest("hex");
+            if (actual !== process.env.CLI_SHA256) throw new Error("CLI tarball SHA-256 mismatch");
+          '
+
+      - name: Install CLI from verified local tarball
+        run: |
+          mkdir "$CLI_INSTALL_DIRECTORY"
+          printf '%s\n' '{"private":true}' > "$CLI_INSTALL_DIRECTORY/package.json"
+          pnpm --dir "$CLI_INSTALL_DIRECTORY" add "$CLI_TARBALL"
+
+      - name: Rehearse every registered recovery state
+        run: |
+          node project/tools/course-recovery/rehearse.mjs \
+            --register "$GITHUB_WORKSPACE/authoring/course/delivery-states.json" \
+            --validator "$GITHUB_WORKSPACE/authoring/course/scripts/validate-delivery-states.mjs" \
+            --authoring "$GITHUB_WORKSPACE/authoring" \
+            --project "$GITHUB_WORKSPACE/project" \
+            --cli-builder "$CLI_INSTALL_DIRECTORY/node_modules/@madeup-video/course/dist/scripts/build-recovery-assets.js" \
+            --output "$RECOVERY_BUNDLE" \
+            --course-version "$COURSE_VERSION" \
+            --authoring-commit "$AUTHORING_COMMIT" \
+            --cli-version "$CLI_VERSION" \
+            --cli-tag "$CLI_TAG" \
+            --cli-sha256 "$CLI_SHA256"
+
+      - name: Upload inspected recovery rehearsal bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: course-recovery-rehearsal
+          retention-days: 2
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/course-recovery-bundle/S01-L01-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S01-L02-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S01-L03-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S02-L01-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S02-L02-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S02-L03-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S02-L04-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S03-L01-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S03-L02-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S03-L03-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S03-L04-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/manifest.json
+            ${{ runner.temp }}/course-recovery-bundle/SHA256SUMS
+
+      - name: Remove all temporary rehearsal resources
+        if: always()
+        env:
+          ASKPASS_PATH: ${{ runner.temp }}/course-authoring-askpass.sh
+        run: |
+          node --input-type=module --eval '
+            import { rmSync } from "node:fs";
+            for (const path of [process.env.ASKPASS_PATH, process.env.CLI_TARBALL,
+              process.env.CLI_INSTALL_DIRECTORY, process.env.RECOVERY_BUNDLE]) {
+              if (path) rmSync(path, { recursive: true, force: true });
+            }
+          '
