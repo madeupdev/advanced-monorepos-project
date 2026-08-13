@@ -147,7 +147,7 @@ function successfulPrerequisiteHandler(call) {
   return result();
 }
 
-test("the root package remains authoritative without Nx package inference", async () => {
+test("the root package remains installable without root Nx package inference", async () => {
   const workspacePath = fileURLToPath(
     new URL("../../pnpm-workspace.yaml", import.meta.url),
   );
@@ -158,7 +158,8 @@ test("the root package remains authoritative without Nx package inference", asyn
   const packageJson = JSON.parse(await readFile(packagePath, "utf8"));
 
   assert.equal(packageJson.name, "@madeup-video/storefront");
-  assert.doesNotMatch(workspace, /^packages:/mu);
+  assert.match(workspace, /^packages:\s*\n\s+- ["']apps\/\*["']\s*$/mu);
+  assert.doesNotMatch(workspace, /^\s+- \.\s*$/mu);
 });
 
 test("environment-sensitive test targets are never replayed from cache", async () => {
