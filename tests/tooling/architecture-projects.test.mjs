@@ -122,6 +122,7 @@ test('repository aggregates cover the API projects', async () => {
   const scripts = packageJson.scripts;
 
   assert.match(scripts.build, /@madeup-video\/api/);
+  assert.match(scripts.build, /--parallel=1/);
   assert.match(scripts.typecheck, /@madeup-video\/api-e2e/);
   assert.match(scripts['test:api'], /@madeup-video\/api-e2e/);
   assert.match(scripts['test:all'], /test:api/);

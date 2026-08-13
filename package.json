@@ -9,7 +9,7 @@
     "dev": "nx run-many -t dev --projects=@madeup-video/api,@madeup-video/storefront --parallel=2",
     "dev:storefront": "nx run-many -t dev --projects=@madeup-video/api,@madeup-video/storefront --parallel=2",
     "dev:api": "nx run @madeup-video/api:dev",
-    "build": "pnpm db:generate && nx run-many -t build --projects=@madeup-video/api,@madeup-video/storefront",
+    "build": "pnpm db:generate && nx run-many -t build --projects=@madeup-video/api,@madeup-video/storefront --parallel=1",
     "start": "nx run @madeup-video/storefront:start",
     "lint": "eslint .",
     "typecheck": "pnpm db:generate && nx run-many -t typecheck --projects=@madeup-video/api,@madeup-video/api-e2e,@madeup-video/storefront",
