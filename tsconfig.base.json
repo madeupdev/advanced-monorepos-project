@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@madeup-video/contracts": ["./libs/contracts/src/index.ts"],
+      "@madeup-video/database": ["./libs/database/src/index.ts"],
+      "@madeup-video/rental-domain": ["./libs/rental-domain/src/index.ts"],
+      "@madeup-video/testing": ["./libs/testing/src/index.ts"],
+      "@madeup-video/ui": ["./libs/ui/src/index.ts"]
+    }
+  }
+}

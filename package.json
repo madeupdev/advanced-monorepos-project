@@ -2,6 +2,13 @@
   "name": "@madeup-video/storefront",
   "version": "0.0.0",
   "private": true,
+  "nx": {
+    "tags": [
+      "type:app",
+      "runtime:universal",
+      "scope:storefront"
+    ]
+  },
   "license": "SEE LICENSE IN LICENSE.md",
   "type": "module",
   "scripts": {
@@ -48,6 +55,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@nx/eslint-plugin": "23.1.1",
     "@nx/next": "23.1.1",
     "@nx/playwright": "23.1.1",
     "@playwright/test": "1.62.0",

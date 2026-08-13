@@ -29,22 +29,59 @@ standards. Their value comes from the dependency decisions they encode.
 
 ## Allowed directions
 
-The storefront may depend on the approved libraries while it remains the
-temporary Next.js application and backend. Contracts and rental-domain code
-must remain framework-neutral. Browser UI must not depend on server-only
-database code. Production code must not depend on testing utilities, and
-lower-level libraries must not reach into storefront internals.
+Every dependency must satisfy all three tag dimensions:
 
-The boundary implementation will make those decisions executable in the next
-runnable state. This decision-only state does not claim that enforcement is
-already active.
+| Source | Allowed target purposes |
+| --- | --- |
+| application | contract, domain, data access, UI |
+| contract | contract |
+| domain | contract, domain |
+| data access | contract, domain, data access |
+| UI | contract, UI |
+| testing | application, contract, domain, data access, UI, testing |
+
+Browser projects may depend only on browser or universal projects. Server
+projects may depend only on server or universal projects. The universal
+storefront temporarily contains both server routes and browser consumers, so
+it may use all three runtimes until the dedicated API extraction.
+
+Storefront scope may consume storefront, rental, and shared code. Rental scope
+may consume rental and shared code. Shared scope may consume only shared code.
+
+The root test files belong to the storefront project in the current layout.
+Their lint override permits `@madeup-video/testing`; application source does
+not receive that exception. Production code therefore cannot depend on test
+fixtures.
+
+The database adapter has one exact-file allowance for its generated Prisma
+client at `generated/prisma/client`. Generated Prisma output is not an Nx
+project or a handwritten architectural dependency, and its established output
+contract remains unchanged. The allowance applies to no other source file or
+import.
 
 ## Public entry points
 
 Each library exposes one `src/index.ts`. Consumers import that public entry
 point through its `@madeup-video/*` alias rather than reaching into internal
 files. Internal modules remain free to change without expanding the public
-contract.
+contract. `tsconfig.base.json` owns the five aliases so Nx and TypeScript read
+the same public-entry-point map.
+
+Accepted:
+
+```ts
+import type { TitleSummary } from "@madeup-video/contracts";
+```
+
+Rejected:
+
+```ts
+import { getDatabase } from "@madeup-video/database"; // from browser UI
+import { getDatabase } from "../libs/database/src/lib/database"; // deep import
+```
+
+Run `pnpm lint` for the repository-wide boundary check or pass a focused file
+to `pnpm exec eslint` while diagnosing an edge.
 
 ## Rejected candidates
 

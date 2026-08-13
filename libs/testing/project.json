@@ -2,5 +2,6 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "name": "@madeup-video/testing",
   "projectType": "library",
-  "sourceRoot": "libs/testing/src"
+  "sourceRoot": "libs/testing/src",
+  "tags": ["type:test", "runtime:server", "scope:shared"]
 }

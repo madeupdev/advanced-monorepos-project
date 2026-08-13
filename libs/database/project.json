@@ -2,5 +2,6 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "name": "@madeup-video/database",
   "projectType": "library",
-  "sourceRoot": "libs/database/src"
+  "sourceRoot": "libs/database/src",
+  "tags": ["type:data-access", "runtime:server", "scope:rental"]
 }

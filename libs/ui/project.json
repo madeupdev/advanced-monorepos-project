@@ -2,5 +2,6 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "name": "@madeup-video/ui",
   "projectType": "library",
-  "sourceRoot": "libs/ui/src"
+  "sourceRoot": "libs/ui/src",
+  "tags": ["type:ui", "runtime:browser", "scope:shared"]
 }

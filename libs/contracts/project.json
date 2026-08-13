@@ -2,5 +2,6 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "name": "@madeup-video/contracts",
   "projectType": "library",
-  "sourceRoot": "libs/contracts/src"
+  "sourceRoot": "libs/contracts/src",
+  "tags": ["type:contract", "runtime:universal", "scope:rental"]
 }
