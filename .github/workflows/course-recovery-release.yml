@@ -37,14 +37,14 @@ jobs:
       PGHOST: 127.0.0.1
       PGPORT: '5432'
       PGUSER: course_recovery
-      PGPASSWORD: recovery-${{ github.run_id }}-${{ github.run_attempt }}
+      PGPASSWORD: ${{ secrets.RECOVERY_DATABASE_PASSWORD }}
     services:
       postgres:
         image: postgres:17
         env:
           POSTGRES_DB: postgres
           POSTGRES_USER: course_recovery
-          POSTGRES_PASSWORD: recovery-${{ github.run_id }}-${{ github.run_attempt }}
+          POSTGRES_PASSWORD: ${{ secrets.RECOVERY_DATABASE_PASSWORD }}
         ports:
           - 5432:5432
         options: >-

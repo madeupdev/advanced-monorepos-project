@@ -46,6 +46,7 @@ test('creates a minimal state-specific environment without inherited secrets', (
       HOME: '/fixed/state/home',
       XDG_CACHE_HOME: '/fixed/state/cache',
       NX_CACHE_DIRECTORY: '/fixed/state/cache/nx',
+      PLAYWRIGHT_BROWSERS_PATH: '/fixed/state/cache/ms-playwright',
       CI: 'true',
       LANG: 'C.UTF-8',
       LC_ALL: 'C.UTF-8',

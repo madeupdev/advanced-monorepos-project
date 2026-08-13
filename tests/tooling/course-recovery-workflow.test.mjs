@@ -76,6 +76,13 @@ test('derives the fixed CLI release asset and verifies its digest before local i
 test('runs PostgreSQL 17 with explicit health checks and the tested rehearsal runner', async () => {
   const source = await workflow();
   assert.match(source, /image: postgres:17/);
+  assert.equal(
+    (source.match(/secrets\.RECOVERY_DATABASE_PASSWORD/g) ?? []).length,
+    2,
+  );
+  assert.match(source, /PGPASSWORD: \$\{\{ secrets\.RECOVERY_DATABASE_PASSWORD \}\}/);
+  assert.match(source, /POSTGRES_PASSWORD: \$\{\{ secrets\.RECOVERY_DATABASE_PASSWORD \}\}/);
+  assert.doesNotMatch(source, /PGPASSWORD: recovery-|POSTGRES_PASSWORD: recovery-/);
   assert.match(source, /--health-cmd.*pg_isready/);
   assert.match(source, /--health-interval/);
   assert.match(source, /--health-timeout/);

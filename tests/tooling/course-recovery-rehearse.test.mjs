@@ -60,7 +60,7 @@ test('creates a minimal temporary builder projection without private trusted met
   assert.match(source, /learner-controlled/);
 });
 
-async function fixtureAdapters({ failBuild, failExtract, failCompare } = {}) {
+async function fixtureAdapters({ failBuild, failExtract, failCompare, failCommands } = {}) {
   const calls = {
     build: [],
     reachability: [],
@@ -107,7 +107,10 @@ async function fixtureAdapters({ failBuild, failExtract, failCompare } = {}) {
         sensitiveValues: ['postgresql://redacted'],
       });
     },
-    runStateCommands: async (state, value) => calls.commands.push({ state, value }),
+    runStateCommands: async (state, value) => {
+      calls.commands.push({ state, value });
+      if (failCommands) throw new Error('trusted setup failed');
+    },
   };
   return { adapters, calls };
 }
@@ -158,6 +161,13 @@ test('builds twice, verifies every state in isolation, and copies only the bundl
     fixture.calls.commands[0].value.environment.HOME,
     fixture.calls.commands[1].value.environment.HOME,
   );
+  assert.notEqual(
+    fixture.calls.commands[0].value.environment.PLAYWRIGHT_BROWSERS_PATH,
+    fixture.calls.commands[1].value.environment.PLAYWRIGHT_BROWSERS_PATH,
+  );
+  for (const call of fixture.calls.commands) {
+    assert.match(call.value.environment.PLAYWRIGHT_BROWSERS_PATH, /\/cache\/ms-playwright$/);
+  }
   assert.doesNotMatch(
     JSON.stringify(fixture.calls.commands.map(({ state }) => state.trustedCI)),
     /learner-controlled/,
@@ -176,6 +186,7 @@ for (const [label, options, pattern] of [
   ['builder failure', { failBuild: true }, /builder failed/],
   ['nondeterministic build', { failCompare: true }, /nondeterministic/],
   ['extraction failure', { failExtract: true }, /extract failed/],
+  ['trusted setup failure', { failCommands: true }, /trusted setup failed/],
 ]) {
   test(`cleans all temporary and partial state directories after ${label}`, async () => {
     const parent = await mkdtemp(join(tmpdir(), 'course-rehearse-failure-'));

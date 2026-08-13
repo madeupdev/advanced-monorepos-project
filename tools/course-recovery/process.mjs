@@ -14,6 +14,7 @@ export function createControlledEnvironment({
     HOME: home,
     XDG_CACHE_HOME: cache,
     NX_CACHE_DIRECTORY: `${cache}/nx`,
+    PLAYWRIGHT_BROWSERS_PATH: `${cache}/ms-playwright`,
     CI: 'true',
     LANG: 'C.UTF-8',
     LC_ALL: 'C.UTF-8',
