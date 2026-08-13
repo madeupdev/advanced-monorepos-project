@@ -64,6 +64,21 @@ test('preserves the accepted storefront dependency edges', async () => {
   );
 });
 
+test('tracks root Prisma sources as cached storefront build inputs', async () => {
+  const project = JSON.parse(
+    await readFile(
+      new URL('../../apps/storefront/project.json', import.meta.url),
+    ),
+  );
+
+  assert.deepEqual(project.targets.build.inputs, [
+    'default',
+    '^default',
+    '{workspaceRoot}/prisma/**/*',
+    '{workspaceRoot}/prisma.config.ts',
+  ]);
+});
+
 test('exposes only the five approved library entry points', async () => {
   const tsconfig = JSON.parse(
     await readFile(new URL('../../tsconfig.base.json', import.meta.url)),

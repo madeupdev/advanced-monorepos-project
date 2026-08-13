@@ -11,6 +11,12 @@
   "targets": {
     "build": {
       "executor": "nx:run-commands",
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/prisma/**/*",
+        "{workspaceRoot}/prisma.config.ts"
+      ],
       "outputs": [
         "{projectRoot}/.next/!(cache)",
         "{projectRoot}/.next/!(cache)/**/*",
