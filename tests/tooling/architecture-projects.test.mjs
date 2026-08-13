@@ -121,11 +121,24 @@ test('repository aggregates cover the API projects', async () => {
   );
   const scripts = packageJson.scripts;
 
+  assert.equal(scripts.lint, 'eslint .');
   assert.match(scripts.build, /@madeup-video\/api/);
   assert.match(scripts.build, /--parallel=1/);
   assert.match(scripts.typecheck, /@madeup-video\/api-e2e/);
   assert.match(scripts['test:api'], /@madeup-video\/api-e2e/);
   assert.match(scripts['test:all'], /test:api/);
+});
+
+test('CI validates the complete API and storefront workspace', async () => {
+  const workflow = await readFile(
+    new URL('../../.github/workflows/ci.yml', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(workflow, /run: pnpm lint/);
+  assert.match(workflow, /run: pnpm typecheck/);
+  assert.match(workflow, /run: pnpm build/);
+  assert.match(workflow, /run: pnpm test:api/);
 });
 
 test('exposes only the five approved library entry points', async () => {

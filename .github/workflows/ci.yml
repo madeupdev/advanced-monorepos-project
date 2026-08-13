@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   validate:
-    name: Validate inherited application
+    name: Validate monorepo applications
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -61,25 +61,28 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Lint
-        run: pnpm exec nx lint @madeup-video/storefront
+        run: pnpm lint
 
       - name: Type-check
-        run: pnpm exec nx typecheck @madeup-video/storefront
+        run: pnpm typecheck
 
       - name: Local environment tooling tests
-        run: pnpm exec nx test:tooling @madeup-video/storefront
+        run: pnpm test:tooling
 
       - name: Unit tests
-        run: pnpm exec nx test:unit @madeup-video/storefront
+        run: pnpm test:unit
 
       - name: Integration tests
-        run: pnpm exec nx test:integration @madeup-video/storefront
+        run: pnpm test:integration
+
+      - name: API contract tests
+        run: pnpm test:api
 
       - name: Production build
-        run: pnpm exec nx build @madeup-video/storefront
+        run: pnpm build
 
       - name: End-to-end tests
-        run: pnpm exec nx test:e2e @madeup-video/storefront
+        run: pnpm test:e2e
 
       - name: Upload Playwright failure evidence
         if: failure()
