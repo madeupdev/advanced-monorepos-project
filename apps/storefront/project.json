@@ -1,0 +1,116 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@madeup-video/storefront",
+  "projectType": "application",
+  "sourceRoot": "apps/storefront",
+  "tags": ["type:app", "runtime:universal", "scope:storefront"],
+  "implicitDependencies": [
+    "@madeup-video/rental-domain",
+    "@madeup-video/testing"
+  ],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{projectRoot}/.next/!(cache)",
+        "{projectRoot}/.next/!(cache)/**/*",
+        "{workspaceRoot}/generated/prisma/**/*"
+      ],
+      "options": {
+        "cwd": "apps/storefront",
+        "commands": [
+          "pnpm --dir ../.. db:generate",
+          "pnpm exec next build"
+        ],
+        "parallel": false
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "options": {
+        "cwd": "apps/storefront",
+        "command": "pnpm exec next dev"
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "options": {
+        "cwd": "apps/storefront",
+        "command": "pnpm exec next start"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": ".",
+        "command": "pnpm exec eslint apps/storefront"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/storefront",
+        "commands": [
+          "pnpm --dir ../.. db:generate",
+          "pnpm exec next typegen",
+          "pnpm exec tsc --noEmit -p tsconfig.json"
+        ],
+        "parallel": false
+      }
+    },
+    "test:unit": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": ".",
+        "command": "pnpm exec vitest run --project unit"
+      }
+    },
+    "test:tooling": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": ".",
+        "command": "node --test tests/tooling/**/*.test.mjs"
+      }
+    },
+    "test:integration": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": ".",
+        "commands": [
+          "pnpm exec tsx --tsconfig tsconfig.base.json tests/helpers/prepare-test-database.ts",
+          "pnpm exec vitest run --project integration"
+        ],
+        "parallel": false
+      }
+    },
+    "test:e2e": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": ".",
+        "commands": [
+          "pnpm exec tsx --tsconfig tsconfig.base.json tests/helpers/prepare-test-database.ts",
+          "pnpm exec playwright test --config apps/storefront/playwright.config.ts"
+        ],
+        "parallel": false
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": ".",
+        "commands": [
+          "pnpm exec nx run @madeup-video/storefront:test:unit",
+          "pnpm exec nx run @madeup-video/storefront:test:integration",
+          "pnpm exec nx run @madeup-video/storefront:test:e2e"
+        ],
+        "parallel": false
+      }
+    }
+  }
+}

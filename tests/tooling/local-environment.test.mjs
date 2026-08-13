@@ -147,13 +147,18 @@ function successfulPrerequisiteHandler(call) {
   return result();
 }
 
-test("the pnpm workspace explicitly includes the root package", async () => {
+test("the root package remains authoritative without Nx package inference", async () => {
   const workspacePath = fileURLToPath(
     new URL("../../pnpm-workspace.yaml", import.meta.url),
   );
+  const packagePath = fileURLToPath(
+    new URL("../../package.json", import.meta.url),
+  );
   const workspace = await readFile(workspacePath, "utf8");
+  const packageJson = JSON.parse(await readFile(packagePath, "utf8"));
 
-  assert.match(workspace, /^packages:\s*\n\s+- \.\s*$/mu);
+  assert.equal(packageJson.name, "@madeup-video/storefront");
+  assert.doesNotMatch(workspace, /^packages:/mu);
 });
 
 test("environment-sensitive test targets are never replayed from cache", async () => {

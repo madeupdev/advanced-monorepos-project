@@ -88,16 +88,39 @@ export default defineConfig([
   ...nx.configs["flat/base"],
   {
     files: ["**/*.{js,mjs,cjs,ts,tsx}"],
+    settings: {
+      next: {
+        rootDir: "apps/storefront",
+      },
+    },
     rules: {
       "@nx/enforce-module-boundaries": ["error", boundaryOptions],
     },
   },
   {
-    files: ["tests/**/*.{ts,tsx}"],
+    files: [
+      "tests/**/*.{ts,tsx}",
+      "apps/storefront/tests/**/*.{ts,tsx}",
+    ],
     rules: {
       "@nx/enforce-module-boundaries": [
         "error",
-        { ...boundaryOptions, allow: ["@madeup-video/testing"] },
+        {
+          ...boundaryOptions,
+          allow: [
+            "@madeup-video/testing",
+            "../../../../tests/helpers/*",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["apps/storefront/playwright.config.ts"],
+    rules: {
+      "@nx/enforce-module-boundaries": [
+        "error",
+        { ...boundaryOptions, allow: ["../../tests/helpers/*"] },
       ],
     },
   },
@@ -114,7 +137,7 @@ export default defineConfig([
     },
   },
   globalIgnores([
-    ".next/**",
+    "apps/storefront/.next/**",
     ".nx/**",
     "coverage/**",
     "generated/prisma/**",

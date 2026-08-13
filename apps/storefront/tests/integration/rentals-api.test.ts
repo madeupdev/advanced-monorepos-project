@@ -9,7 +9,7 @@ import { POST as returnRentalRoute } from "../../app/api/rentals/[id]/return/rou
 import {
   disconnectTestDatabase,
   resetTestDatabase,
-} from "../helpers/database";
+} from "../../../../tests/helpers/database";
 
 type RentalResponse = {
   rental: RentalSummary;

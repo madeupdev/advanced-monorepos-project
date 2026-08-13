@@ -4,7 +4,7 @@ import { GET as listTitlesRoute } from "../../app/api/titles/route";
 import {
   disconnectTestDatabase,
   resetTestDatabase,
-} from "../helpers/database";
+} from "../../../../tests/helpers/database";
 
 type TitlesResponse = {
   titles: TitleSummary[];

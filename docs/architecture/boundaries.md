@@ -1,8 +1,9 @@
 # Workspace boundaries
 
-The storefront remains the root application. Workspace projects exist only
-when they carry an ownership, runtime, dependency, public-contract, or useful
-task boundary.
+The storefront is the explicit application under `apps/storefront`; the root
+package retains repository-wide tooling and database ownership. Workspace
+projects exist only when they carry an ownership, runtime, dependency,
+public-contract, or useful task boundary.
 
 | Project | Responsibility | Why it is a project |
 | --- | --- | --- |
@@ -48,10 +49,11 @@ it may use all three runtimes until the dedicated API extraction.
 Storefront scope may consume storefront, rental, and shared code. Rental scope
 may consume rental and shared code. Shared scope may consume only shared code.
 
-The root test files belong to the storefront project in the current layout.
-Their lint override permits `@madeup-video/testing`; application source does
-not receive that exception. Production code therefore cannot depend on test
-fixtures.
+The integration and end-to-end files under `apps/storefront/tests` belong to
+the storefront project, while repository-wide unit and tooling support remains
+under the root `tests` directory. The test lint override permits
+`@madeup-video/testing`; application source does not receive that exception.
+Production code therefore cannot depend on test fixtures.
 
 The database adapter has one exact-file allowance for its generated Prisma
 client at `generated/prisma/client`. Generated Prisma output is not an Nx

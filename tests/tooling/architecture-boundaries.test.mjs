@@ -30,8 +30,8 @@ test('rejects a browser project importing the database project', async () => {
 
 test('rejects a cross-project relative import that bypasses the public entry point', async () => {
   const messages = await boundaryMessages(
-    "export { getDatabase } from '../libs/database/src/lib/database';\n",
-    'app/server-import-violation.ts',
+    "export { getDatabase } from '../../../libs/database/src/lib/database';\n",
+    'apps/storefront/app/server-import-violation.ts',
   );
 
   assert.equal(messages.length > 0, true);

@@ -1,6 +1,3 @@
-packages:
-  - .
-
 allowBuilds:
   '@prisma/engines': true
   esbuild: true

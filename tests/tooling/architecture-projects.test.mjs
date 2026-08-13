@@ -32,6 +32,38 @@ test('models only the storefront and five approved libraries', async () => {
   ]);
 });
 
+test('locates the storefront at its canonical application root', async () => {
+  const { stdout } = await exec(
+    'pnpm',
+    ['exec', 'nx', 'show', 'project', '@madeup-video/storefront', '--json'],
+    { cwd: root, encoding: 'utf8' },
+  );
+
+  assert.equal(JSON.parse(stdout).root, 'apps/storefront');
+});
+
+test('preserves the accepted storefront dependency edges', async () => {
+  const { stdout } = await exec(
+    'pnpm',
+    ['exec', 'nx', 'graph', '--file=stdout'],
+    { cwd: root, encoding: 'utf8' },
+  );
+  const graph = JSON.parse(stdout).graph;
+
+  assert.deepEqual(
+    graph.dependencies['@madeup-video/storefront']
+      .map(({ target }) => target)
+      .sort(),
+    [
+      '@madeup-video/contracts',
+      '@madeup-video/database',
+      '@madeup-video/rental-domain',
+      '@madeup-video/testing',
+      '@madeup-video/ui',
+    ],
+  );
+});
+
 test('exposes only the five approved library entry points', async () => {
   const tsconfig = JSON.parse(
     await readFile(new URL('../../tsconfig.base.json', import.meta.url)),

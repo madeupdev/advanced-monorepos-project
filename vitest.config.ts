@@ -35,7 +35,10 @@ export default defineConfig({
         extends: true,
         test: {
           name: "integration",
-          include: ["tests/integration/**/*.test.ts"],
+          include: [
+            "apps/storefront/tests/integration/**/*.test.ts",
+            "tests/integration/**/*.test.ts",
+          ],
           environment: "node",
           setupFiles: ["tests/helpers/test-environment.ts"],
           fileParallelism: false,

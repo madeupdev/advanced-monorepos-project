@@ -4,10 +4,11 @@ Made Up Video is a fictional independent physical-video-rental shop and the
 inherited application for **Advanced Monorepos: Evolve a Production TypeScript
 App with Nx**.
 
-This state is intentionally one standalone Next.js App Router application. It
-supports browsing six original films, viewing title details, renting an
-available physical copy as member Jamie Vega, viewing active rentals, and
-returning a copy.
+This state is intentionally one standalone Next.js App Router application under
+`apps/storefront`. The root package retains the shared toolchain, database, and
+course-recovery workflows. The storefront supports browsing six original
+films, viewing title details, renting an available physical copy as member
+Jamie Vega, viewing active rentals, and returning a copy.
 
 ## Required tools
 
@@ -183,11 +184,11 @@ pnpm test:all
 pnpm build
 ```
 
-Unit and integration tests are separate Vitest projects. Database-backed
-integration files run sequentially against the dedicated test database. The
-single Playwright journey starts its own Next.js server on port `3100`, uses one
-Chromium worker with no retries, and resets the same test fixtures before it
-runs.
+Unit and integration tests are separate Vitest projects. The storefront-owned
+integration files live beside the application and run sequentially against the
+dedicated test database. The single storefront-owned Playwright journey starts
+its own Next.js server on port `3100`, uses one Chromium worker with no retries,
+and resets the same test fixtures before it runs.
 
 The Prisma client under `generated/prisma/`, local environment files, framework
 output, Playwright failure artifacts, and installed dependencies are ignored.

@@ -1,5 +1,5 @@
 node_modules/
-.next/
+apps/storefront/.next/
 coverage/
 generated/prisma/
 next-env.d.ts
