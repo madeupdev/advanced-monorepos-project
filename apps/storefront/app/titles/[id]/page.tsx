@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTitleById } from "@madeup-video/database";
 import { PosterArt } from "@madeup-video/ui";
 import { RentButton } from "../../../components/rent-button";
+import { getTitleFromApi } from "../../../lib/api";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ type TitlePageProps = {
 
 export default async function TitlePage({ params }: TitlePageProps) {
   const { id } = await params;
-  const title = await getTitleById(id);
+  const title = await getTitleFromApi(id);
 
   if (!title) {
     notFound();

@@ -110,4 +110,54 @@ describe("title catalogue API", () => {
       ],
     });
   });
+
+  it("returns the complete title detail contract", async () => {
+    app = await NestFactory.create(AppModule, { logger: false });
+    configureApi(app);
+    await app.listen(0, "127.0.0.1");
+
+    const response = await fetch(
+      `${await app.getUrl()}/api/titles/title-midnight-rewind`,
+    );
+
+    expect(response.status).toBe(200);
+
+    const { titleResponseSchema } = await import("@madeup-video/contracts");
+    expect(titleResponseSchema.parse(await response.json())).toEqual({
+      title: {
+        id: "title-midnight-rewind",
+        slug: "midnight-rewind",
+        name: "Midnight Rewind",
+        synopsis:
+          "A night clerk discovers that one returned tape records tomorrow's local news. With sunrise approaching, she must decide which future is worth changing.",
+        releaseYear: 1997,
+        genre: "Mystery",
+        certificate: "12",
+        runtimeMinutes: 104,
+        artworkKey: "midnight-rewind",
+        availableCopies: 3,
+        totalCopies: 3,
+      },
+    });
+  });
+
+  it("returns the inherited not-found contract for an unknown title", async () => {
+    app = await NestFactory.create(AppModule, { logger: false });
+    configureApi(app);
+    await app.listen(0, "127.0.0.1");
+
+    const response = await fetch(
+      `${await app.getUrl()}/api/titles/title-not-in-the-catalogue`,
+    );
+
+    expect(response.status).toBe(404);
+
+    const { errorResponseSchema } = await import("@madeup-video/contracts");
+    expect(errorResponseSchema.parse(await response.json())).toEqual({
+      error: {
+        code: "TITLE_NOT_FOUND",
+        message: "That title could not be found.",
+      },
+    });
+  });
 });

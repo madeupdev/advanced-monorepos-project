@@ -1,5 +1,8 @@
 import {
+  errorResponseSchema,
+  titleResponseSchema,
   titlesResponseSchema,
+  type TitleDetails,
   type TitleSummary,
 } from "@madeup-video/contracts";
 
@@ -18,4 +21,26 @@ export async function listTitlesFromApi(): Promise<TitleSummary[]> {
   }
 
   return titlesResponseSchema.parse(await response.json()).titles;
+}
+
+export async function getTitleFromApi(id: string): Promise<TitleDetails | null> {
+  const response = await fetch(
+    `${serverApiOrigin}/api/titles/${encodeURIComponent(id)}`,
+    { cache: "no-store" },
+  );
+  const body: unknown = await response.json();
+
+  if (response.status === 404) {
+    const error = errorResponseSchema.parse(body);
+
+    if (error.error.code === "TITLE_NOT_FOUND") {
+      return null;
+    }
+  }
+
+  if (!response.ok) {
+    throw new Error(`Title detail request failed with ${response.status}.`);
+  }
+
+  return titleResponseSchema.parse(body).title;
 }
