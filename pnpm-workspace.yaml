@@ -10,5 +10,6 @@ allowBuilds:
   nx: true
   '@parcel/watcher': true
   less: false
+  "@nestjs/core": false
 engineStrict: true
 pmOnFail: error

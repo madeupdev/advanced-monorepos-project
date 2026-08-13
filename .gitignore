@@ -1,4 +1,5 @@
 node_modules/
+dist/
 apps/storefront/.next/
 coverage/
 generated/prisma/

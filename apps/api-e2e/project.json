@@ -1,0 +1,42 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@madeup-video/api-e2e",
+  "projectType": "application",
+  "sourceRoot": "apps/api-e2e/src",
+  "tags": ["type:test", "runtime:server", "scope:rental"],
+  "implicitDependencies": ["@madeup-video/api"],
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": ".",
+        "command": "pnpm exec eslint apps/api-e2e"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": ".",
+        "command": "pnpm exec tsc --noEmit -p apps/api-e2e/tsconfig.json"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": ".",
+        "commands": [
+          {
+            "command": "pnpm exec tsx --tsconfig tsconfig.base.json tests/helpers/prepare-test-database.ts",
+            "forwardAllArgs": false
+          },
+          {
+            "command": "pnpm exec vitest run --config apps/api-e2e/vitest.config.ts apps/api-e2e/src/{args.testFile}",
+            "forwardAllArgs": false
+          }
+        ],
+        "parallel": false
+      }
+    }
+  }
+}

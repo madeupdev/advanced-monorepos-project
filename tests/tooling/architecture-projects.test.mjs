@@ -9,6 +9,8 @@ const exec = promisify(execFile);
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const courseTags = new Map([
   ['@madeup-video/storefront', ['runtime:universal', 'scope:storefront', 'type:app']],
+  ['@madeup-video/api', ['runtime:server', 'scope:rental', 'type:app']],
+  ['@madeup-video/api-e2e', ['runtime:server', 'scope:rental', 'type:test']],
   ['@madeup-video/contracts', ['runtime:universal', 'scope:rental', 'type:contract']],
   ['@madeup-video/rental-domain', ['runtime:universal', 'scope:rental', 'type:domain']],
   ['@madeup-video/database', ['runtime:server', 'scope:rental', 'type:data-access']],
@@ -16,13 +18,15 @@ const courseTags = new Map([
   ['@madeup-video/testing', ['runtime:server', 'scope:shared', 'type:test']],
 ]);
 
-test('models only the storefront and five approved libraries', async () => {
+test('models only the storefront, API projects, and five approved libraries', async () => {
   const { stdout } = await exec('pnpm', ['exec', 'nx', 'show', 'projects', '--json'], {
     cwd: root,
     encoding: 'utf8',
   });
 
   assert.deepEqual(JSON.parse(stdout).sort(), [
+    '@madeup-video/api',
+    '@madeup-video/api-e2e',
     '@madeup-video/contracts',
     '@madeup-video/database',
     '@madeup-video/rental-domain',
@@ -40,6 +44,16 @@ test('locates the storefront at its canonical application root', async () => {
   );
 
   assert.equal(JSON.parse(stdout).root, 'apps/storefront');
+});
+
+test('keeps generated API output out of project inference', async () => {
+  const { stdout } = await exec(
+    'pnpm',
+    ['exec', 'nx', 'show', 'project', '@madeup-video/api', '--json'],
+    { cwd: root, encoding: 'utf8' },
+  );
+
+  assert.equal(JSON.parse(stdout).root, 'apps/api');
 });
 
 test('preserves the accepted storefront dependency edges', async () => {
@@ -77,6 +91,18 @@ test('tracks root Prisma sources as cached storefront build inputs', async () =>
     '{workspaceRoot}/prisma/**/*',
     '{workspaceRoot}/prisma.config.ts',
   ]);
+});
+
+test('repository aggregates cover the API projects', async () => {
+  const packageJson = JSON.parse(
+    await readFile(new URL('../../package.json', import.meta.url)),
+  );
+  const scripts = packageJson.scripts;
+
+  assert.match(scripts.build, /@madeup-video\/api/);
+  assert.match(scripts.typecheck, /@madeup-video\/api-e2e/);
+  assert.match(scripts['test:api'], /@madeup-video\/api-e2e/);
+  assert.match(scripts['test:all'], /test:api/);
 });
 
 test('exposes only the five approved library entry points', async () => {

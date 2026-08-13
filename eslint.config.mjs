@@ -101,6 +101,7 @@ export default defineConfig([
     files: [
       "tests/**/*.{ts,tsx}",
       "apps/storefront/tests/**/*.{ts,tsx}",
+      "apps/api-e2e/src/**/*.{ts,tsx}",
     ],
     rules: {
       "@nx/enforce-module-boundaries": [
@@ -110,6 +111,8 @@ export default defineConfig([
           allow: [
             "@madeup-video/testing",
             "../../../../tests/helpers/*",
+            "../../../tests/helpers/*",
+            "../../api/src/app/*",
           ],
         },
       ],
@@ -138,6 +141,7 @@ export default defineConfig([
   },
   globalIgnores([
     "apps/storefront/.next/**",
+    "dist/**",
     ".nx/**",
     "coverage/**",
     "generated/prisma/**",

@@ -1,11 +1,11 @@
 import { TitleCard } from "../components/title-card";
-import { listTitles } from "@madeup-video/database";
+import { listTitlesFromApi } from "../lib/api";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const titles = await listTitles();
+  const titles = await listTitlesFromApi();
 
   return (
     <>
