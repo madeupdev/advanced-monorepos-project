@@ -137,8 +137,12 @@ test('CI validates the complete API and storefront workspace', async () => {
 
   assert.match(workflow, /run: pnpm lint/);
   assert.match(workflow, /run: pnpm typecheck/);
+  assert.match(workflow, /run: pnpm test:tooling/);
+  assert.match(workflow, /run: pnpm test:unit/);
+  assert.match(workflow, /run: pnpm test:integration/);
   assert.match(workflow, /run: pnpm build/);
   assert.match(workflow, /run: pnpm test:api/);
+  assert.match(workflow, /run: pnpm test:e2e/);
 });
 
 test('exposes only the five approved library entry points', async () => {
