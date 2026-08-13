@@ -23,6 +23,7 @@ export class InvalidRentalJsonFilter implements ExceptionFilter {
     const request = http.getRequest<HttpRequest>();
     const response = http.getResponse<HttpResponse>();
     const requestUrl = request.originalUrl ?? request.url;
+    const requestPath = new URL(requestUrl, "http://api.local").pathname;
     const exceptionResponse = exception.getResponse();
     const isParserBadRequest =
       typeof exceptionResponse === "object" &&
@@ -36,7 +37,7 @@ export class InvalidRentalJsonFilter implements ExceptionFilter {
 
     if (
       request.method === "POST" &&
-      requestUrl === "/api/rentals" &&
+      requestPath === "/api/rentals" &&
       isParserBadRequest
     ) {
       response.status(400).json({

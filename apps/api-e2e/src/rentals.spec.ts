@@ -117,6 +117,29 @@ describe("rentals API", () => {
     });
   });
 
+  it("rejects malformed JSON at the creation route with a query string", async () => {
+    app = await NestFactory.create(AppModule, { logger: false });
+    configureApi(app);
+    await app.listen(0, "127.0.0.1");
+
+    const response = await fetch(
+      `${await app.getUrl()}/api/rentals?source=storefront`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: '{"titleId":',
+      },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "INVALID_REQUEST",
+        message: "Provide a valid JSON rental request.",
+      },
+    });
+  });
+
   it("requires a title ID", async () => {
     app = await NestFactory.create(AppModule, { logger: false });
     configureApi(app);
