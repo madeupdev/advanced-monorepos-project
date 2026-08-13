@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { RentalList } from "../../components/rental-list";
-import { listActiveRentals } from "@madeup-video/database";
+import { listRentalsFromApi } from "../../lib/api";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
 
 export default async function RentalsPage() {
-  const rentals = await listActiveRentals();
+  const rentals = await listRentalsFromApi();
 
   return (
     <div className={`container ${styles.page}`}>

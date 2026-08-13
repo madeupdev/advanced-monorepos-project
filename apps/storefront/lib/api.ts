@@ -1,9 +1,11 @@
 import {
   errorResponseSchema,
+  rentalsResponseSchema,
   titleResponseSchema,
   titlesResponseSchema,
   type TitleDetails,
   type TitleSummary,
+  type RentalSummary,
 } from "@madeup-video/contracts";
 
 const serverApiOrigin =
@@ -43,4 +45,16 @@ export async function getTitleFromApi(id: string): Promise<TitleDetails | null> 
   }
 
   return titleResponseSchema.parse(body).title;
+}
+
+export async function listRentalsFromApi(): Promise<RentalSummary[]> {
+  const response = await fetch(`${serverApiOrigin}/api/rentals`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Rental list request failed with ${response.status}.`);
+  }
+
+  return rentalsResponseSchema.parse(await response.json()).rentals;
 }
