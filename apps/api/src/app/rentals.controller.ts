@@ -1,10 +1,22 @@
-import { Body, Controller, Get, HttpException, Post } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpException,
+  Param,
+  Post,
+} from "@nestjs/common";
 import {
   createRentalSchema,
   type RentalResponse,
   type RentalsResponse,
 } from "@madeup-video/contracts";
-import { createRental, listActiveRentals } from "@madeup-video/database";
+import {
+  createRental,
+  listActiveRentals,
+  returnRental,
+} from "@madeup-video/database";
 
 @Controller("rentals")
 export class RentalsController {
@@ -44,6 +56,30 @@ export class RentalsController {
           },
         },
         titleMissing ? 404 : 409,
+      );
+    }
+
+    return { rental: result.rental };
+  }
+
+  @Post(":id/return")
+  @HttpCode(200)
+  async returnRental(@Param("id") id: string): Promise<RentalResponse> {
+    const result = await returnRental(id);
+
+    if (!result.ok) {
+      const rentalMissing = result.reason === "RENTAL_NOT_FOUND";
+
+      throw new HttpException(
+        {
+          error: {
+            code: result.reason,
+            message: rentalMissing
+              ? "That rental could not be found."
+              : "That copy has already been returned.",
+          },
+        },
+        rentalMissing ? 404 : 409,
       );
     }
 

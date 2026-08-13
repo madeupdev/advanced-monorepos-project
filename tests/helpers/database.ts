@@ -34,6 +34,31 @@ export async function resetTestDatabase(): Promise<void> {
   });
 }
 
+export async function seedActiveTestRental(): Promise<void> {
+  await testDatabase.$transaction([
+    testDatabase.physicalCopy.update({
+      where: { id: "copy-midnight-rewind-1" },
+      data: { status: "RENTED" },
+    }),
+    testDatabase.rental.create({
+      data: {
+        id: "rental-midnight-active",
+        copyId: "copy-midnight-rewind-1",
+        customerName: "Jamie Vega",
+        rentedAt: new Date("2026-08-01T12:00:00.000Z"),
+        dueAt: new Date("2026-08-08T12:00:00.000Z"),
+      },
+    }),
+  ]);
+}
+
+export async function exhaustTestTitleCopies(titleId: string): Promise<void> {
+  await testDatabase.physicalCopy.updateMany({
+    where: { titleId },
+    data: { status: "RENTED" },
+  });
+}
+
 export async function disconnectTestDatabase(): Promise<void> {
   await testDatabase.$disconnect();
 }

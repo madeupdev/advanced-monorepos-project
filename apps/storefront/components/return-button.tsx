@@ -15,6 +15,9 @@ type ErrorPayload = {
   };
 };
 
+const browserApiOrigin =
+  process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:3333";
+
 export function ReturnButton({ rentalId, titleName }: ReturnButtonProps) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -25,9 +28,10 @@ export function ReturnButton({ rentalId, titleName }: ReturnButtonProps) {
     setError("");
 
     try {
-      const response = await fetch(`/api/rentals/${rentalId}/return`, {
-        method: "POST",
-      });
+      const response = await fetch(
+        `${browserApiOrigin}/api/rentals/${rentalId}/return`,
+        { method: "POST" },
+      );
 
       if (!response.ok) {
         const payload = (await response.json()) as ErrorPayload;
