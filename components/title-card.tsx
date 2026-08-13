@@ -1,6 +1,6 @@
 import Link from "next/link";
-import type { TitleSummary } from "../lib/contracts";
-import { PosterArt } from "./poster-art";
+import type { TitleSummary } from "@madeup-video/contracts";
+import { PosterArt } from "@madeup-video/ui";
 import styles from "./title-card.module.css";
 
 type TitleCardProps = {

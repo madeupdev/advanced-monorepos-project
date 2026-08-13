@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectAvailableCopy } from "../../lib/rental-rules";
+import { selectAvailableCopy } from "@madeup-video/rental-domain";
 
 describe("selectAvailableCopy", () => {
   it("selects the first available physical copy", () => {

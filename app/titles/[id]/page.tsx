@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PosterArt } from "../../../components/poster-art";
+import { getTitleById } from "@madeup-video/database";
+import { PosterArt } from "@madeup-video/ui";
 import { RentButton } from "../../../components/rent-button";
-import { getTitleById } from "../../../lib/titles";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";

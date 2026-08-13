@@ -1,0 +1,6 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@madeup-video/contracts",
+  "projectType": "library",
+  "sourceRoot": "libs/contracts/src"
+}

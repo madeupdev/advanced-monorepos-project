@@ -1,6 +1,6 @@
-import type { RentalSummary } from "./contracts";
+import type { RentalSummary } from "@madeup-video/contracts";
 import { getDatabase } from "./database";
-import { selectAvailableCopy } from "./rental-rules";
+import { selectAvailableCopy } from "@madeup-video/rental-domain";
 
 type RentalRecord = {
   id: string;

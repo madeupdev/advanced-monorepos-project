@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import type { TitleSummary } from "@madeup-video/contracts";
 import { GET as listTitlesRoute } from "../../app/api/titles/route";
-import type { TitleSummary } from "../../lib/contracts";
 import {
   disconnectTestDatabase,
   resetTestDatabase,

@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import "@fontsource/archivo-black/400.css";
 import "@fontsource/atkinson-hyperlegible/400.css";
 import "@fontsource/atkinson-hyperlegible/700.css";
-import { BrandLogo } from "../components/brand-logo";
+import { BrandLogo } from "@madeup-video/ui";
 import "./globals.css";
 
 export const metadata: Metadata = {

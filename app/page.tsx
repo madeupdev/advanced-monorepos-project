@@ -1,5 +1,5 @@
 import { TitleCard } from "../components/title-card";
-import { listTitles } from "../lib/titles";
+import { listTitles } from "@madeup-video/database";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";

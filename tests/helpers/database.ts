@@ -1,7 +1,7 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../../generated/prisma/client";
+import { testTitles } from "@madeup-video/testing";
 import { testDatabaseUrl } from "./environment";
-import { testTitles } from "./fixtures";
 
 const testDatabase = new PrismaClient({
   adapter: new PrismaPg({ connectionString: testDatabaseUrl }),

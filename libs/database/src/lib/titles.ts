@@ -1,4 +1,4 @@
-import type { TitleDetails, TitleSummary } from "./contracts";
+import type { TitleDetails, TitleSummary } from "@madeup-video/contracts";
 import { getDatabase } from "./database";
 
 export async function listTitles(): Promise<TitleSummary[]> {

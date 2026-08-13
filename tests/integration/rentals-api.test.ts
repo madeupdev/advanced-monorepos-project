@@ -1,11 +1,11 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import type { RentalSummary, TitleSummary } from "@madeup-video/contracts";
 import { GET as listTitlesRoute } from "../../app/api/titles/route";
 import {
   GET as listRentalsRoute,
   POST as createRentalRoute,
 } from "../../app/api/rentals/route";
 import { POST as returnRentalRoute } from "../../app/api/rentals/[id]/return/route";
-import type { RentalSummary, TitleSummary } from "../../lib/contracts";
 import {
   disconnectTestDatabase,
   resetTestDatabase,

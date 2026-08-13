@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createRentalSchema } from "../../../lib/contracts";
-import { createRental, listActiveRentals } from "../../../lib/rentals";
+import { createRentalSchema } from "@madeup-video/contracts";
+import { createRental, listActiveRentals } from "@madeup-video/database";
 
 export async function GET() {
   const rentals = await listActiveRentals();

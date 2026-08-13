@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { RentalList } from "../../components/rental-list";
-import { listActiveRentals } from "../../lib/rentals";
+import { listActiveRentals } from "@madeup-video/database";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";

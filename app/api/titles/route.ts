@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listTitles } from "../../../lib/titles";
+import { listTitles } from "@madeup-video/database";
 
 export async function GET() {
   const titles = await listTitles();

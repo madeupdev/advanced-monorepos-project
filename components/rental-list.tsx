@@ -1,5 +1,5 @@
-import type { RentalSummary } from "../lib/contracts";
-import { PosterArt } from "./poster-art";
+import type { RentalSummary } from "@madeup-video/contracts";
+import { PosterArt } from "@madeup-video/ui";
 import { ReturnButton } from "./return-button";
 import styles from "./rental-list.module.css";
 

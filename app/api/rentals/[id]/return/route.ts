@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { returnRental } from "../../../../../lib/rentals";
+import { returnRental } from "@madeup-video/database";
 
 type ReturnRouteContext = {
   params: Promise<{ id: string }>;
