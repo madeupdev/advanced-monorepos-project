@@ -93,6 +93,28 @@ test('tracks root Prisma sources as cached storefront build inputs', async () =>
   ]);
 });
 
+test('tracks and generates root Prisma sources for cached API builds', async () => {
+  const project = JSON.parse(
+    await readFile(new URL('../../apps/api/project.json', import.meta.url)),
+  );
+  const build = project.targets.build;
+
+  assert.deepEqual(build.inputs, [
+    'default',
+    '^default',
+    '{workspaceRoot}/prisma/**/*',
+    '{workspaceRoot}/prisma.config.ts',
+  ]);
+  assert.ok(
+    build.outputs.includes('{workspaceRoot}/generated/prisma/**/*'),
+  );
+  assert.deepEqual(build.options.commands, [
+    'pnpm --dir ../.. db:generate',
+    'pnpm exec webpack-cli build',
+  ]);
+  assert.equal(build.options.parallel, false);
+});
+
 test('repository aggregates cover the API projects', async () => {
   const packageJson = JSON.parse(
     await readFile(new URL('../../package.json', import.meta.url)),

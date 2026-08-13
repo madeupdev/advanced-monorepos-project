@@ -7,10 +7,22 @@
   "targets": {
     "build": {
       "executor": "nx:run-commands",
-      "inputs": ["default", "^default"],
-      "outputs": ["{workspaceRoot}/dist/apps/api"],
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/prisma/**/*",
+        "{workspaceRoot}/prisma.config.ts"
+      ],
+      "outputs": [
+        "{workspaceRoot}/dist/apps/api",
+        "{workspaceRoot}/generated/prisma/**/*"
+      ],
       "options": {
-        "command": "webpack-cli build",
+        "commands": [
+          "pnpm --dir ../.. db:generate",
+          "pnpm exec webpack-cli build"
+        ],
+        "parallel": false,
         "env": {
           "NODE_ENV": "production"
         },
