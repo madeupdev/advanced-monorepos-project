@@ -17,7 +17,7 @@ const courseTags = new Map([
 ]);
 
 test('models only the storefront and five approved libraries', async () => {
-  const { stdout } = await exec('pnpm', ['exec', 'nx', 'show', 'projects'], {
+  const { stdout } = await exec('pnpm', ['exec', 'nx', 'show', 'projects', '--json'], {
     cwd: root,
     encoding: 'utf8',
   });
