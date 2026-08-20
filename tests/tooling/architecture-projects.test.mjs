@@ -1,12 +1,35 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
+import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { test } from 'node:test';
 
 const exec = promisify(execFile);
 const root = fileURLToPath(new URL('../..', import.meta.url));
+const ignoredStorefrontDirectories = new Set([
+  '.next',
+  'node_modules',
+  'playwright-report',
+  'test-results',
+]);
+
+async function storefrontSourceFiles(directory) {
+  const files = [];
+
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+
+    if (entry.isDirectory() && !ignoredStorefrontDirectories.has(entry.name)) {
+      files.push(...await storefrontSourceFiles(path));
+    } else if (entry.isFile() && /\.(?:ts|tsx)$/.test(entry.name)) {
+      files.push(path);
+    }
+  }
+
+  return files.sort();
+}
 const courseTags = new Map([
   ['@madeup-video/storefront', ['runtime:universal', 'scope:storefront', 'type:app']],
   ['@madeup-video/api', ['runtime:server', 'scope:rental', 'type:app']],
@@ -78,30 +101,14 @@ test('preserves the accepted final storefront dependency edges', async () => {
 });
 
 test('keeps the complete storefront free of database imports', async () => {
-  const [{ stdout }, { stdout: deletedStdout }] = await Promise.all([
-    exec('git', ['ls-files', '--cached', '--', 'apps/storefront'], {
-      cwd: root,
-      encoding: 'utf8',
-    }),
-    exec('git', ['ls-files', '--deleted', '--', 'apps/storefront'], {
-      cwd: root,
-      encoding: 'utf8',
-    }),
-  ]);
-  const deletedFiles = new Set(deletedStdout.trim().split('\n'));
-  const sourceFiles = stdout
-    .trim()
-    .split('\n')
-    .filter(
-      (file) => /\.(?:ts|tsx)$/.test(file) && !deletedFiles.has(file),
-    );
+  const sourceFiles = await storefrontSourceFiles(join(root, 'apps/storefront'));
   const violations = [];
 
   for (const file of sourceFiles) {
-    const source = await readFile(new URL(`../../${file}`, import.meta.url), 'utf8');
+    const source = await readFile(file, 'utf8');
 
     if (source.includes('@madeup-video/database')) {
-      violations.push(file);
+      violations.push(relative(root, file));
     }
   }
 
