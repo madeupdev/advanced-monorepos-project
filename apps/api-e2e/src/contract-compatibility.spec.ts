@@ -8,7 +8,10 @@ import {
   disconnectTestDatabase,
   resetTestDatabase,
 } from "../../../tests/helpers/database";
-import { parseOldTitlesResponse } from "./fixtures/old-title-consumer";
+import {
+  parseOldTitleResponse,
+  parseOldTitlesResponse,
+} from "./fixtures/old-title-consumer";
 
 describe("title contract deployment compatibility", () => {
   let app: INestApplication | undefined;
@@ -32,6 +35,23 @@ describe("title contract deployment compatibility", () => {
     expect(response.status).toBe(200);
     const titles = parseOldTitlesResponse(await response.json());
     expect(titles[0]).toEqual({
+      id: "title-midnight-rewind",
+      availableCopies: 3,
+      totalCopies: 3,
+    });
+  });
+
+  it("continues to support an old flat-availability title-detail consumer", async () => {
+    app = await NestFactory.create(AppModule, { logger: false });
+    configureApi(app);
+    await app.listen(0, "127.0.0.1");
+
+    const response = await fetch(
+      `${await app.getUrl()}/api/titles/title-midnight-rewind`,
+    );
+
+    expect(response.status).toBe(200);
+    expect(parseOldTitleResponse(await response.json())).toEqual({
       id: "title-midnight-rewind",
       availableCopies: 3,
       totalCopies: 3,
