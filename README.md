@@ -4,11 +4,11 @@ Made Up Video is a fictional independent physical-video-rental shop and the
 inherited application for **Advanced Monorepos: Evolve a Production TypeScript
 App with Nx**.
 
-This state is intentionally one standalone Next.js App Router application under
-`apps/storefront`. The root package retains the shared toolchain, database, and
-course-recovery workflows. The storefront supports browsing six original
+This state contains a Next.js storefront under `apps/storefront` and a NestJS
+API under `apps/api`. The root package retains the shared toolchain, database,
+and course-recovery workflows. The storefront supports browsing six original
 films, viewing title details, renting an available physical copy as member
-Jamie Vega, viewing active rentals, and returning a copy.
+Jamie Vega, viewing active rentals, and returning a copy through the API.
 
 ## Required tools
 
@@ -60,9 +60,10 @@ administration are outside this project's scope.
 ## Local ownership boundary
 
 Docker Compose owns one external-infrastructure process: PostgreSQL 17. The
-storefront, Prisma commands, tests, and seed process remain repository-owned
-Node.js processes. PostgreSQL therefore starts and stops independently from
-`pnpm dev`; restarting the storefront does not recreate the database.
+storefront, API, Prisma commands, tests, and seed process remain
+repository-owned Node.js processes. PostgreSQL therefore starts and stops
+independently from `pnpm dev`; restarting either application does not recreate
+the database.
 
 Compose creates one named data volume, `madeup-video_postgres-data`. The
 credentials in `compose.yaml` and the committed environment examples are
@@ -92,14 +93,15 @@ then ensures that both `madeup_video` and `madeup_video_test` exist and
 generates the Prisma client. It applies committed migrations to the development
 database and loads its deterministic fixtures.
 
-Setup is idempotent and does not start the persistent Next.js development
-process. Start the storefront separately:
+Setup is idempotent and does not start the persistent application development
+processes. Start the API and storefront together:
 
 ```sh
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). The API listens on
+`http://localhost:3333`.
 
 The deterministic seed contains six titles, fifteen physical copies, and no
 rentals.
@@ -184,11 +186,12 @@ pnpm test:all
 pnpm build
 ```
 
-Unit and integration tests are separate Vitest projects. The storefront-owned
-integration files live beside the application and run sequentially against the
-dedicated test database. The single storefront-owned Playwright journey starts
-its own Next.js server on port `3100`, uses one Chromium worker with no retries,
-and resets the same test fixtures before it runs.
+Unit and integration tests are separate Vitest projects. Root-owned database
+integration files run sequentially against the dedicated test database. API
+compatibility tests exercise the NestJS application over real HTTP. The single
+storefront-owned Playwright journey starts its own API and Next.js server, uses
+one Chromium worker with no retries, and resets the same fixtures before it
+runs.
 
 The Prisma client under `generated/prisma/`, local environment files, framework
 output, Playwright failure artifacts, and installed dependencies are ignored.

@@ -1,13 +1,15 @@
 # Workspace boundaries
 
-The storefront is the explicit application under `apps/storefront`; the root
-package retains repository-wide tooling and database ownership. Workspace
-projects exist only when they carry an ownership, runtime, dependency,
-public-contract, or useful task boundary.
+The storefront and API are explicit applications under `apps/storefront` and
+`apps/api`; the root package retains repository-wide tooling and database
+ownership. Workspace projects exist only when they carry an ownership,
+runtime, dependency, public-contract, or useful task boundary.
 
 | Project | Responsibility | Why it is a project |
 | --- | --- | --- |
-| storefront | Next.js pages, routes, and storefront-only components | Deployable application |
+| storefront | Next.js pages and storefront-only components | Deployable browser-facing application |
+| api | NestJS HTTP endpoints and composition | Deployable server application |
+| api-e2e | Real-HTTP API compatibility verification | Deployable-boundary test project |
 | contracts | Runtime request schemas and API-facing rental types | Public compatibility boundary |
 | rental-domain | Framework-neutral rental decisions | Isolated business-rule boundary |
 | database | Prisma access and persistence operations | Server-only runtime boundary |
@@ -43,15 +45,16 @@ Every dependency must satisfy all three tag dimensions:
 
 Browser projects may depend only on browser or universal projects. Server
 projects may depend only on server or universal projects. The universal
-storefront temporarily contains both server routes and browser consumers, so
-it may use all three runtimes until the dedicated API extraction.
+storefront contains server-rendered pages and browser consumers, but all
+database access belongs to the dedicated server API.
 
 Storefront scope may consume storefront, rental, and shared code. Rental scope
 may consume rental and shared code. Shared scope may consume only shared code.
 
-The integration and end-to-end files under `apps/storefront/tests` belong to
-the storefront project, while repository-wide unit and tooling support remains
-under the root `tests` directory. The test lint override permits
+The end-to-end files under `apps/storefront/tests` belong to the storefront
+project. API HTTP compatibility belongs to `api-e2e`, while database-library
+integration, unit, and tooling support remain under the root `tests`
+directory. The test lint override permits
 `@madeup-video/testing`; application source does not receive that exception.
 Production code therefore cannot depend on test fixtures.
 
@@ -87,7 +90,7 @@ to `pnpm exec eslint` while diagnosing an edge.
 
 ## Rejected candidates
 
-`PosterArt` is not a sixth project. It shares ownership, runtime, release
+`PosterArt` is not a separate project. It shares ownership, runtime, release
 cadence, and task execution with `ui`, so extracting it would create navigation
 cost without a new enforceable boundary. It remains a module inside `ui`.
 

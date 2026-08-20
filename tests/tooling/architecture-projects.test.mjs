@@ -56,7 +56,7 @@ test('keeps generated API output out of project inference', async () => {
   assert.equal(JSON.parse(stdout).root, 'apps/api');
 });
 
-test('preserves the accepted storefront dependency edges', async () => {
+test('preserves the accepted final storefront dependency edges', async () => {
   const { stdout } = await exec(
     'pnpm',
     ['exec', 'nx', 'graph', '--file=stdout'],
@@ -70,12 +70,42 @@ test('preserves the accepted storefront dependency edges', async () => {
       .sort(),
     [
       '@madeup-video/contracts',
-      '@madeup-video/database',
       '@madeup-video/rental-domain',
       '@madeup-video/testing',
       '@madeup-video/ui',
     ],
   );
+});
+
+test('keeps the complete storefront free of database imports', async () => {
+  const [{ stdout }, { stdout: deletedStdout }] = await Promise.all([
+    exec('git', ['ls-files', '--cached', '--', 'apps/storefront'], {
+      cwd: root,
+      encoding: 'utf8',
+    }),
+    exec('git', ['ls-files', '--deleted', '--', 'apps/storefront'], {
+      cwd: root,
+      encoding: 'utf8',
+    }),
+  ]);
+  const deletedFiles = new Set(deletedStdout.trim().split('\n'));
+  const sourceFiles = stdout
+    .trim()
+    .split('\n')
+    .filter(
+      (file) => /\.(?:ts|tsx)$/.test(file) && !deletedFiles.has(file),
+    );
+  const violations = [];
+
+  for (const file of sourceFiles) {
+    const source = await readFile(new URL(`../../${file}`, import.meta.url), 'utf8');
+
+    if (source.includes('@madeup-video/database')) {
+      violations.push(file);
+    }
+  }
+
+  assert.deepEqual(violations, []);
 });
 
 test('tracks root Prisma sources as cached storefront build inputs', async () => {
