@@ -1,0 +1,27 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@madeup-video/admin",
+  "projectType": "application",
+  "sourceRoot": "apps/admin/src",
+  "tags": ["type:app", "runtime:browser", "scope:rental"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/apps/admin"],
+      "options": { "cwd": "apps/admin", "command": "pnpm exec vite build --outDir ../../dist/apps/admin" }
+    },
+    "dev": {
+      "continuous": true,
+      "executor": "nx:run-commands",
+      "options": { "cwd": "apps/admin", "command": "pnpm exec vite --host 127.0.0.1 --port 3200" }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "cwd": ".", "command": "pnpm exec eslint apps/admin" }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": { "cwd": ".", "command": "pnpm exec tsc --noEmit -p apps/admin/tsconfig.json" }
+    }
+  }
+}

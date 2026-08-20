@@ -1,0 +1,30 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@madeup-video/admin-e2e",
+  "projectType": "application",
+  "sourceRoot": "apps/admin-e2e/src",
+  "tags": ["type:test", "runtime:browser", "scope:rental"],
+  "implicitDependencies": ["@madeup-video/admin", "@madeup-video/api"],
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "cwd": ".", "command": "pnpm exec eslint apps/admin-e2e" }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": { "cwd": ".", "command": "pnpm exec tsc --noEmit -p apps/admin-e2e/tsconfig.json" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": ".",
+        "commands": [
+          "pnpm exec tsx --tsconfig tsconfig.base.json tests/helpers/prepare-test-database.ts",
+          "pnpm exec playwright test --config apps/admin-e2e/playwright.config.ts"
+        ],
+        "parallel": false
+      }
+    }
+  }
+}
