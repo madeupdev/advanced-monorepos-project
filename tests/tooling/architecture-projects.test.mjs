@@ -50,10 +50,10 @@ test('models the storefront, API, admin projects, and five approved libraries', 
   });
 
   assert.deepEqual(JSON.parse(stdout).sort(), [
-    '@madeup-video/api',
-    '@madeup-video/api-e2e',
     '@madeup-video/admin',
     '@madeup-video/admin-e2e',
+    '@madeup-video/api',
+    '@madeup-video/api-e2e',
     '@madeup-video/contracts',
     '@madeup-video/database',
     '@madeup-video/rental-domain',
