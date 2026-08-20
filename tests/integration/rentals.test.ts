@@ -52,6 +52,7 @@ describe("rental persistence", () => {
       expect.arrayContaining([
         expect.objectContaining({
           id: "title-midnight-rewind",
+          availability: { available: 3, total: 3 },
           availableCopies: 3,
           totalCopies: 3,
         }),

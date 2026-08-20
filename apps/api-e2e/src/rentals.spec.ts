@@ -247,6 +247,7 @@ describe("rentals API", () => {
       certificate: "12",
       runtimeMinutes: 104,
       artworkKey: "midnight-rewind",
+      availability: { available: 3, total: 3 },
       availableCopies: 3,
       totalCopies: 3,
     });

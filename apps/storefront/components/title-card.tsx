@@ -9,9 +9,9 @@ type TitleCardProps = {
 
 export function TitleCard({ title }: TitleCardProps) {
   const availability =
-    title.availableCopies === 0
+    title.availability.available === 0
       ? "All copies currently rented"
-      : `${title.availableCopies} ${title.availableCopies === 1 ? "copy" : "copies"} available`;
+      : `${title.availability.available} ${title.availability.available === 1 ? "copy" : "copies"} available`;
 
   return (
     <article className={styles.card}>
@@ -32,7 +32,9 @@ export function TitleCard({ title }: TitleCardProps) {
         </ul>
         <p
           className={
-            title.availableCopies > 0 ? styles.available : styles.unavailable
+            title.availability.available > 0
+              ? styles.available
+              : styles.unavailable
           }
         >
           {availability}

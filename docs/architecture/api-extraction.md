@@ -19,3 +19,11 @@ handlers into the storefront project.
 
 The API HTTP suite additionally retains validation, malformed-JSON, detail,
 and CORS behavior that the removed handlers did not exercise directly.
+
+## Contract contraction gate
+
+Title responses expose grouped `availability` for current consumers and retain
+the deprecated flat copy-count fields for deployed consumers. The flat fields
+may be removed only after deployment inventory or telemetry proves that no
+supported old consumer remains. A source-code migration alone is not evidence
+that deployed consumers have disappeared.

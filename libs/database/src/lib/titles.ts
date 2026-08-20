@@ -25,6 +25,10 @@ export async function listTitles(): Promise<TitleSummary[]> {
     certificate: title.certificate,
     runtimeMinutes: title.runtimeMinutes,
     artworkKey: title.artworkKey,
+    availability: {
+      available: title.copies.length,
+      total: title._count.copies,
+    },
     availableCopies: title.copies.length,
     totalCopies: title._count.copies,
   }));
@@ -59,6 +63,10 @@ export async function getTitleById(id: string): Promise<TitleDetails | null> {
     certificate: title.certificate,
     runtimeMinutes: title.runtimeMinutes,
     artworkKey: title.artworkKey,
+    availability: {
+      available: title.copies.length,
+      total: title._count.copies,
+    },
     availableCopies: title.copies.length,
     totalCopies: title._count.copies,
   };

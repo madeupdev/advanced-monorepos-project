@@ -20,9 +20,9 @@ export default async function TitlePage({ params }: TitlePageProps) {
   }
 
   const availability =
-    title.availableCopies === 0
+    title.availability.available === 0
       ? "All copies are currently rented"
-      : `${title.availableCopies} of ${title.totalCopies} ${title.totalCopies === 1 ? "copy is" : "copies are"} available`;
+      : `${title.availability.available} of ${title.availability.total} ${title.availability.total === 1 ? "copy is" : "copies are"} available`;
 
   return (
     <div className={`container ${styles.page}`}>
@@ -48,7 +48,7 @@ export default async function TitlePage({ params }: TitlePageProps) {
             <strong>{availability}</strong>
             <span>Physical VHS copies, rented for seven nights.</span>
           </div>
-          {title.availableCopies > 0 ? (
+          {title.availability.available > 0 ? (
             <RentButton titleId={title.id} titleName={title.name} />
           ) : (
             <p className={styles.unavailable}>All copies are currently rented</p>

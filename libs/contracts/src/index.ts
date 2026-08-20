@@ -4,6 +4,11 @@ export const createRentalSchema = z.object({
   titleId: z.string().min(1),
 });
 
+export const titleAvailabilitySchema = z.object({
+  available: z.number().int().nonnegative(),
+  total: z.number().int().nonnegative(),
+});
+
 export const titleSummarySchema = z.object({
   id: z.string(),
   slug: z.string(),
@@ -13,6 +18,9 @@ export const titleSummarySchema = z.object({
   certificate: z.string(),
   runtimeMinutes: z.number().int(),
   artworkKey: z.string(),
+  availability: titleAvailabilitySchema,
+  // Deprecated compatibility fields for already deployed consumers.
+  // Remove only after inventory or telemetry proves none remain supported.
   availableCopies: z.number().int().nonnegative(),
   totalCopies: z.number().int().nonnegative(),
 });
