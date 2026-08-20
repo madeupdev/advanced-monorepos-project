@@ -22,4 +22,26 @@ describe("API shell", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ status: "ok" });
   });
+
+  it("permits mutation preflights from the normal development storefront", async () => {
+    app = await NestFactory.create(AppModule, { logger: false });
+    configureApi(app);
+    await app.listen(0, "127.0.0.1");
+
+    const response = await fetch(`${await app.getUrl()}/api/rentals`, {
+      method: "OPTIONS",
+      headers: {
+        origin: "http://localhost:3000",
+        "access-control-request-method": "POST",
+      },
+    });
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get("access-control-allow-origin")).toBe(
+      "http://localhost:3000",
+    );
+    expect(response.headers.get("access-control-allow-methods")).toContain(
+      "POST",
+    );
+  });
 });
