@@ -1,6 +1,6 @@
 import type { INestApplication } from "@nestjs/common";
 
-const defaultStorefrontOrigin = "http://127.0.0.1:3100";
+const defaultStorefrontOrigin = "http://localhost:3000";
 
 export function configureApi(app: INestApplication): INestApplication {
   app.setGlobalPrefix("api");
