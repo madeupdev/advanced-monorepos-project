@@ -195,6 +195,17 @@ jobs:
             ${{ runner.temp }}/course-recovery-bundle/S03-L02-start.tar.gz
             ${{ runner.temp }}/course-recovery-bundle/S03-L03-start.tar.gz
             ${{ runner.temp }}/course-recovery-bundle/S03-L04-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S04-L01-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S04-L02-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S04-L03-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S04-L04-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S04-final.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S05-L01-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S05-L02-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S05-L03-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S05-L04-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S05-L05-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S05-final.tar.gz
             ${{ runner.temp }}/course-recovery-bundle/manifest.json
             ${{ runner.temp }}/course-recovery-bundle/SHA256SUMS
 
