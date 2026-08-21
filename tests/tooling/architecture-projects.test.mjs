@@ -31,6 +31,8 @@ async function storefrontSourceFiles(directory) {
   return files.sort();
 }
 const courseTags = new Map([
+  ['@madeup-video/admin', ['runtime:browser', 'scope:rental', 'type:app']],
+  ['@madeup-video/admin-e2e', ['runtime:browser', 'scope:rental', 'type:test']],
   ['@madeup-video/storefront', ['runtime:universal', 'scope:storefront', 'type:app']],
   ['@madeup-video/api', ['runtime:server', 'scope:rental', 'type:app']],
   ['@madeup-video/api-e2e', ['runtime:server', 'scope:rental', 'type:test']],
@@ -41,13 +43,15 @@ const courseTags = new Map([
   ['@madeup-video/testing', ['runtime:server', 'scope:shared', 'type:test']],
 ]);
 
-test('models only the storefront, API projects, and five approved libraries', async () => {
+test('models the storefront, admin, API projects, and five approved libraries', async () => {
   const { stdout } = await exec('pnpm', ['exec', 'nx', 'show', 'projects', '--json'], {
     cwd: root,
     encoding: 'utf8',
   });
 
   assert.deepEqual(JSON.parse(stdout).sort(), [
+    '@madeup-video/admin',
+    '@madeup-video/admin-e2e',
     '@madeup-video/api',
     '@madeup-video/api-e2e',
     '@madeup-video/contracts',
@@ -59,14 +63,20 @@ test('models only the storefront, API projects, and five approved libraries', as
   ]);
 });
 
-test('locates the storefront at its canonical application root', async () => {
-  const { stdout } = await exec(
-    'pnpm',
-    ['exec', 'nx', 'show', 'project', '@madeup-video/storefront', '--json'],
-    { cwd: root, encoding: 'utf8' },
-  );
+test('locates the storefront and admin projects at their canonical roots', async () => {
+  for (const [projectName, expectedRoot] of [
+    ['@madeup-video/storefront', 'apps/storefront'],
+    ['@madeup-video/admin', 'apps/admin'],
+    ['@madeup-video/admin-e2e', 'apps/admin-e2e'],
+  ]) {
+    const { stdout } = await exec(
+      'pnpm',
+      ['exec', 'nx', 'show', 'project', projectName, '--json'],
+      { cwd: root, encoding: 'utf8' },
+    );
 
-  assert.equal(JSON.parse(stdout).root, 'apps/storefront');
+    assert.equal(JSON.parse(stdout).root, expectedRoot, projectName);
+  }
 });
 
 test('keeps generated API output out of project inference', async () => {
@@ -152,7 +162,7 @@ test('tracks and generates root Prisma sources for cached API builds', async () 
   assert.equal(build.options.parallel, false);
 });
 
-test('repository aggregates cover the API projects', async () => {
+test('repository aggregates cover the API and admin projects', async () => {
   const packageJson = JSON.parse(
     await readFile(new URL('../../package.json', import.meta.url)),
   );
@@ -160,10 +170,25 @@ test('repository aggregates cover the API projects', async () => {
 
   assert.equal(scripts.lint, 'eslint .');
   assert.match(scripts.build, /@madeup-video\/api/);
+  assert.match(scripts.build, /@madeup-video\/admin/);
   assert.match(scripts.build, /--parallel=1/);
   assert.match(scripts.typecheck, /@madeup-video\/api-e2e/);
+  assert.match(scripts.typecheck, /@madeup-video\/admin/);
+  assert.match(scripts.typecheck, /@madeup-video\/admin-e2e/);
   assert.match(scripts['test:api'], /@madeup-video\/api-e2e/);
   assert.match(scripts['test:all'], /test:api/);
+  assert.match(scripts['test:e2e'], /@madeup-video\/admin-e2e/);
+});
+
+test('lets the local admin E2E use a validated port override', async () => {
+  const config = await readFile(
+    new URL('../../apps/admin-e2e/playwright.config.ts', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(config, /ADMIN_PORT/);
+  assert.match(config, /Number\.isSafeInteger/);
+  assert.match(config, /--port=\$\{adminPort\}/);
 });
 
 test('CI validates the complete API and storefront workspace', async () => {
