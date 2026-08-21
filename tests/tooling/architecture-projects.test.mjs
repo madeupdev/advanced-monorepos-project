@@ -185,10 +185,15 @@ test('lets the local admin E2E use a validated port override', async () => {
     new URL('../../apps/admin-e2e/playwright.config.ts', import.meta.url),
     'utf8',
   );
+  const viteConfig = await readFile(
+    new URL('../../apps/admin/vite.config.ts', import.meta.url),
+    'utf8',
+  );
 
   assert.match(config, /ADMIN_PORT/);
   assert.match(config, /Number\.isSafeInteger/);
   assert.match(config, /--port=\$\{adminPort\}/);
+  assert.match(viteConfig, /strictPort:\s*true/);
 });
 
 test('CI validates the complete API and storefront workspace', async () => {
