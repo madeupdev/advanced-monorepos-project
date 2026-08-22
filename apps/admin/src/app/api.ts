@@ -3,7 +3,7 @@ import {
   titlesResponseSchema,
   type RentalSummary,
   type TitleSummary,
-} from './contracts';
+} from '@madeup-video/contracts';
 
 const apiOrigin = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:3333';
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
+import type { RentalSummary, TitleSummary } from '@madeup-video/contracts';
 
 import { listRentals, listTitles } from './api';
-import type { RentalSummary, TitleSummary } from './contracts';
 import './app.css';
 
 type View = 'titles' | 'copies' | 'rentals';
