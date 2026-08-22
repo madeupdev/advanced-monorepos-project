@@ -196,6 +196,24 @@ test('lets the local admin E2E use a validated port override', async () => {
   assert.match(viteConfig, /strictPort:\s*true/);
 });
 
+test('keeps the prepared admin boundary local and makes its E2E journey self-contained', async () => {
+  const [api, application, project, playwrightConfig] = await Promise.all([
+    readFile(new URL('../../apps/admin/src/app/api.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../../apps/admin/src/app/app.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../../apps/admin-e2e/project.json', import.meta.url), 'utf8'),
+    readFile(new URL('../../apps/admin-e2e/playwright.config.ts', import.meta.url), 'utf8'),
+  ]);
+
+  assert.doesNotMatch(api, /@madeup-video\/contracts/);
+  assert.doesNotMatch(application, /@madeup-video\/(?:contracts|ui)/);
+  assert.match(api, /safeParse|\.parse\(/);
+  assert.match(project, /@madeup-video\/api/);
+  assert.match(project, /prepare-test-database/);
+  assert.match(playwrightConfig, /API_PORT/);
+  assert.match(playwrightConfig, /@madeup-video\/api:dev/);
+  assert.equal((playwrightConfig.match(/reuseExistingServer:\s*false/g) ?? []).length, 2);
+});
+
 test('CI validates the complete API and storefront workspace', async () => {
   const workflow = await readFile(
     new URL('../../.github/workflows/ci.yml', import.meta.url),

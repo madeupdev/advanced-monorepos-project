@@ -44,4 +44,18 @@ describe("API shell", () => {
       "POST",
     );
   });
+
+  it("permits requests from the local admin application", async () => {
+    app = await NestFactory.create(AppModule, { logger: false });
+    configureApi(app);
+    await app.listen(0, "127.0.0.1");
+
+    const response = await fetch(`${await app.getUrl()}/api/titles`, {
+      headers: { origin: "http://localhost:3200" },
+    });
+
+    expect(response.headers.get("access-control-allow-origin")).toBe(
+      "http://localhost:3200",
+    );
+  });
 });

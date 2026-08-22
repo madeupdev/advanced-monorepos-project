@@ -119,7 +119,10 @@ export default defineConfig([
     },
   },
   {
-    files: ["apps/storefront/playwright.config.ts"],
+    files: [
+      "apps/storefront/playwright.config.ts",
+      "apps/admin-e2e/playwright.config.ts",
+    ],
     rules: {
       "@nx/enforce-module-boundaries": [
         "error",
