@@ -6,17 +6,94 @@ import { test } from 'node:test';
 
 import {
   builderRegister,
+  main,
   parseArguments,
   runRecoveryRehearsal,
 } from '../../tools/course-recovery/rehearse.mjs';
 
 test('requires one project-commit argument among closed rehearsal options', () => {
   const args = ['--register', 'r', '--validator', 'v', '--authoring', 'a', '--project', 'p', '--cli-builder', 'c', '--output', 'o', '--course-version', '1.0.0', '--authoring-commit', 'a'.repeat(40), '--project-commit', 'b'.repeat(40), '--cli-version', '1.0.0', '--cli-tag', 'v1.0.0', '--cli-sha256', 'c'.repeat(64)];
+  const projectCommitIndex = args.indexOf('--project-commit');
+  const withoutProjectCommit = args.toSpliced(projectCommitIndex, 2);
   assert.equal(parseArguments(args).get('--project-commit'), 'b'.repeat(40));
-  assert.throws(() => parseArguments(args.filter((value) => value !== '--project-commit' && value !== 'b'.repeat(40))), /Missing/);
+  assert.throws(() => parseArguments(withoutProjectCommit), /Missing/);
   assert.throws(() => parseArguments([...args, '--project-commit', 'b'.repeat(40)]), /Invalid/);
   assert.throws(() => parseArguments([...args, '--unknown', 'x']), /Invalid/);
-  assert.throws(() => parseArguments([...args, '--project-commit']), /Invalid/);
+  assert.throws(() => parseArguments([...withoutProjectCommit, '--project-commit']), /Invalid/);
+});
+
+const integrationCommit = 'd'.repeat(40);
+
+function mainArguments() {
+  return [
+    '--register', '/fixed/register.json',
+    '--validator', '/fixed/validator.mjs',
+    '--authoring', '/fixed/authoring',
+    '--project', '/fixed/project',
+    '--cli-builder', '/fixed/builder.mjs',
+    '--output', '/fixed/output',
+    '--course-version', '1.0.0',
+    '--project-commit', integrationCommit,
+    '--authoring-commit', 'a'.repeat(40),
+    '--cli-version', '0.1.0',
+    '--cli-tag', 'v0.1.0',
+    '--cli-sha256', 'c'.repeat(64),
+  ];
+}
+
+function mainAdapters({ head = integrationCommit, projectReachable = true } = {}) {
+  const events = [];
+  return {
+    events,
+    adapters: {
+      git: async (repository, arguments_) => {
+        events.push(['git', repository, ...arguments_]);
+        if (arguments_[0] === 'rev-parse') return { exitCode: 0, stdout: `${head}\n`, stderr: '' };
+        if (repository === '/fixed/project' && !projectReachable) return { exitCode: 1, stdout: '', stderr: 'not canonical' };
+        return { exitCode: 0, stdout: '', stderr: '' };
+      },
+      loadRegister: async () => {
+        events.push(['load-register']);
+        return register();
+      },
+      rehearse: async ({ register: value }) => {
+        events.push(['rehearse', ...value.states.map(({ sourceCommit }) => sourceCommit)]);
+        return { assets: [] };
+      },
+      writeOutput: (message) => events.push(['output', message]),
+    },
+  };
+}
+
+test('rejects a mismatched checked-out project HEAD before reading the register', async () => {
+  const fixture = mainAdapters({ head: 'e'.repeat(40) });
+  await assert.rejects(main(mainArguments(), fixture.adapters), /does not match checked out HEAD/);
+  assert.deepEqual(fixture.events, [[
+    'git', '/fixed/project', 'rev-parse', '--verify', 'HEAD^{commit}',
+  ]]);
+});
+
+test('rejects a noncanonical project commit separately before reading the register', async () => {
+  const fixture = mainAdapters({ projectReachable: false });
+  await assert.rejects(main(mainArguments(), fixture.adapters), /Project commit.*origin\/main/);
+  assert.deepEqual(fixture.events, [
+    ['git', '/fixed/project', 'rev-parse', '--verify', 'HEAD^{commit}'],
+    ['git', '/fixed/project', 'merge-base', '--is-ancestor', integrationCommit, 'origin/main'],
+  ]);
+});
+
+test('accepts a canonical integration HEAD distinct from every registered state commit', async () => {
+  const fixture = mainAdapters();
+  await main(mainArguments(), fixture.adapters);
+  assert.deepEqual(fixture.events.slice(0, 4), [
+    ['git', '/fixed/project', 'rev-parse', '--verify', 'HEAD^{commit}'],
+    ['git', '/fixed/project', 'merge-base', '--is-ancestor', integrationCommit, 'origin/main'],
+    ['git', '/fixed/authoring', 'merge-base', '--is-ancestor', 'a'.repeat(40), 'origin/main'],
+    ['load-register'],
+  ]);
+  const rehearsal = fixture.events.find(([event]) => event === 'rehearse');
+  assert.ok(rehearsal);
+  assert.equal(rehearsal.includes(integrationCommit), false);
 });
 
 function command(executable, ...arguments_) {

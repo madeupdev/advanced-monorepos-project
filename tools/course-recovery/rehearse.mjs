@@ -302,7 +302,15 @@ export function parseArguments(argv) {
   return values;
 }
 
-export async function main(argv = process.argv.slice(2)) {
+export async function main(
+  argv = process.argv.slice(2),
+  {
+    git = runGit,
+    loadRegister = loadValidatedRegister,
+    rehearse = runRecoveryRehearsal,
+    writeOutput = (message) => process.stdout.write(message),
+  } = {},
+) {
   const args = parseArguments(argv);
   const exactInputs = validateRehearsalInputs({
     courseVersion: args.get('--course-version'),
@@ -314,26 +322,26 @@ export async function main(argv = process.argv.slice(2)) {
   });
   const authoringDirectory = resolve(args.get('--authoring'));
   const projectDirectory = resolve(args.get('--project'));
-  const head = await runGit(projectDirectory, ['rev-parse', '--verify', 'HEAD^{commit}']);
+  const head = await git(projectDirectory, ['rev-parse', '--verify', 'HEAD^{commit}']);
   if (head.exitCode !== 0 || head.stdout.trim() !== exactInputs.projectCommit) {
     throw new Error('Requested project commit does not match checked out HEAD');
   }
-  await assertCommitReachable({ repository: projectDirectory, commit: exactInputs.projectCommit, ref: 'origin/main', label: 'Project commit', git: runGit });
+  await assertCommitReachable({ repository: projectDirectory, commit: exactInputs.projectCommit, ref: 'origin/main', label: 'Project commit', git });
   await assertCommitReachable({
     repository: authoringDirectory,
     commit: exactInputs.authoringCommit,
     ref: 'origin/main',
     label: 'Authoring commit',
-    git: runGit,
+    git,
   });
-  const register = await loadValidatedRegister({
+  const register = await loadRegister({
     registerPath: resolve(args.get('--register')),
     validatorPath: resolve(args.get('--validator')),
   });
   if (register.courseVersion !== exactInputs.courseVersion) {
     throw new Error('Requested course version does not match the private register');
   }
-  const result = await runRecoveryRehearsal({
+  const result = await rehearse({
     register,
     projectDirectory,
     cliBuilderPath: resolve(args.get('--cli-builder')),
@@ -347,7 +355,7 @@ export async function main(argv = process.argv.slice(2)) {
       PGPASSWORD: process.env.PGPASSWORD,
     },
   });
-  process.stdout.write(`Rehearsed ${String(result.assets.length)} recovery states.\n`);
+  writeOutput(`Rehearsed ${String(result.assets.length)} recovery states.\n`);
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {

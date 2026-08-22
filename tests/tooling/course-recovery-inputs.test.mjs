@@ -21,7 +21,8 @@ const validInputs = {
 };
 
 test('requires a closed exact project commit input', () => {
-  const { projectCommit, ...missingProjectCommit } = validInputs;
+  const missingProjectCommit = { ...validInputs };
+  delete missingProjectCommit.projectCommit;
   assert.throws(() => validateRehearsalInputs(missingProjectCommit), /projectCommit/);
   assert.throws(() => validateRehearsalInputs({ ...validInputs, projectCommit: 'bad' }), /projectCommit/);
   assert.throws(() => validateRehearsalInputs({ ...validInputs, projectCommit: 'A'.repeat(40) }), /projectCommit/);
