@@ -274,7 +274,7 @@ export async function loadValidatedRegister({ registerPath, validatorPath }) {
   return result.value;
 }
 
-function parseArguments(argv) {
+export function parseArguments(argv) {
   const allowed = new Set([
     '--register',
     '--validator',
@@ -283,6 +283,7 @@ function parseArguments(argv) {
     '--cli-builder',
     '--output',
     '--course-version',
+    '--project-commit',
     '--authoring-commit',
     '--cli-version',
     '--cli-tag',
@@ -305,12 +306,19 @@ export async function main(argv = process.argv.slice(2)) {
   const args = parseArguments(argv);
   const exactInputs = validateRehearsalInputs({
     courseVersion: args.get('--course-version'),
+    projectCommit: args.get('--project-commit'),
     authoringCommit: args.get('--authoring-commit'),
     cliVersion: args.get('--cli-version'),
     cliTag: args.get('--cli-tag'),
     cliSha256: args.get('--cli-sha256'),
   });
   const authoringDirectory = resolve(args.get('--authoring'));
+  const projectDirectory = resolve(args.get('--project'));
+  const head = await runGit(projectDirectory, ['rev-parse', '--verify', 'HEAD^{commit}']);
+  if (head.exitCode !== 0 || head.stdout.trim() !== exactInputs.projectCommit) {
+    throw new Error('Requested project commit does not match checked out HEAD');
+  }
+  await assertCommitReachable({ repository: projectDirectory, commit: exactInputs.projectCommit, ref: 'origin/main', label: 'Project commit', git: runGit });
   await assertCommitReachable({
     repository: authoringDirectory,
     commit: exactInputs.authoringCommit,
@@ -325,9 +333,12 @@ export async function main(argv = process.argv.slice(2)) {
   if (register.courseVersion !== exactInputs.courseVersion) {
     throw new Error('Requested course version does not match the private register');
   }
+  if (!register.states.some(({ sourceCommit }) => sourceCommit === exactInputs.projectCommit)) {
+    throw new Error('Requested project commit is not registered for recovery');
+  }
   const result = await runRecoveryRehearsal({
     register,
-    projectDirectory: resolve(args.get('--project')),
+    projectDirectory,
     cliBuilderPath: resolve(args.get('--cli-builder')),
     outputDirectory: resolve(args.get('--output')),
     baseEnvironment: {

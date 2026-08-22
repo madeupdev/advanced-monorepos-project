@@ -6,6 +6,7 @@ const COMMIT = /^[a-f0-9]{40}$/;
 const SHA256 = /^[a-f0-9]{64}$/;
 const INPUT_FIELDS = new Set([
   'courseVersion',
+  'projectCommit',
   'authoringCommit',
   'cliVersion',
   'cliTag',
@@ -30,6 +31,12 @@ export function validateRehearsalInputs(input) {
   for (const field of INPUT_FIELDS) {
     if (!(field in input)) throw new Error(`${field} is required`);
   }
+  requirePattern(
+    input.projectCommit,
+    COMMIT,
+    'projectCommit',
+    'exactly 40 lowercase hexadecimal characters',
+  );
   requirePattern(
     input.courseVersion,
     SEMVER,
