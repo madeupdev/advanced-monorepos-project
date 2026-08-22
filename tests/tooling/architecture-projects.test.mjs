@@ -160,6 +160,19 @@ test('shares only UI primitives with the admin', async () => {
   ]);
 });
 
+test('provides host styles for the shared admin brand', async () => {
+  const [application, styles] = await Promise.all([
+    readFile(new URL('../../apps/admin/src/app/app.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../../apps/admin/src/app/app.css', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(application, /className="brand-link"/);
+  assert.match(styles, /--color-cream:\s*#fbf8f2/);
+  assert.match(styles, /--font-display:\s*Inter/);
+  assert.match(styles, /\.brand-link\s*\{[^}]*text-decoration:\s*none/);
+  assert.doesNotMatch(styles, /\.wordmark/);
+});
+
 test('keeps the complete storefront free of database imports', async () => {
   const sourceFiles = await storefrontSourceFiles(join(root, 'apps/storefront'));
   const violations = [];

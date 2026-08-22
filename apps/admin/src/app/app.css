@@ -1,4 +1,6 @@
 :root {
+  --color-cream: #fbf8f2;
+  --font-display: Inter, ui-sans-serif, system-ui, sans-serif;
   color: #171b25;
   background: #fbf8f2;
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
@@ -30,20 +32,8 @@ a {
   padding: 1rem max(5vw, 1.5rem);
 }
 
-.wordmark {
-  align-items: center;
-  display: inline-flex;
-  font-weight: 800;
-  gap: 0.5rem;
+.brand-link {
   text-decoration: none;
-}
-
-.wordmark span:first-child {
-  background: #e14a35;
-  border-radius: 0.25rem;
-  color: white;
-  letter-spacing: 0.05em;
-  padding: 0.2rem 0.35rem;
 }
 
 .site-header > p {

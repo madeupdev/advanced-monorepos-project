@@ -103,7 +103,7 @@ export function App() {
     <>
       <a className="skip-link" href="#content">Skip to content</a>
       <header className="site-header">
-        <a href="#titles" onClick={() => setView('titles')}>
+        <a className="brand-link" href="#titles" onClick={() => setView('titles')}>
           <BrandLogo variant="full" />
         </a>
         <p>Staff inventory</p>
