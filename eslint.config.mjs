@@ -102,7 +102,6 @@ export default defineConfig([
       "tests/**/*.{ts,tsx}",
       "apps/storefront/tests/**/*.{ts,tsx}",
       "apps/api-e2e/src/**/*.{ts,tsx}",
-      "apps/admin-e2e/src/**/*.{ts,tsx}",
     ],
     rules: {
       "@nx/enforce-module-boundaries": [
@@ -120,7 +119,10 @@ export default defineConfig([
     },
   },
   {
-    files: ["apps/storefront/playwright.config.ts", "apps/admin-e2e/playwright.config.ts"],
+    files: [
+      "apps/storefront/playwright.config.ts",
+      "apps/admin-e2e/playwright.config.ts",
+    ],
     rules: {
       "@nx/enforce-module-boundaries": [
         "error",

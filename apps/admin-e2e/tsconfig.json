@@ -2,13 +2,13 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["dom", "es2022"],
-    "strict": true,
-    "noEmit": true,
-    "module": "esnext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-    "types": ["node", "@playwright/test"]
+    "noEmit": true,
+    "strict": true,
+    "types": ["node"]
   },
-  "include": ["src/**/*.ts", "playwright.config.ts"]
+  "include": ["playwright.config.ts", "src"]
 }

@@ -63,14 +63,20 @@ test('models the storefront, API, admin projects, and five approved libraries', 
   ]);
 });
 
-test('locates the storefront at its canonical application root', async () => {
-  const { stdout } = await exec(
-    'pnpm',
-    ['exec', 'nx', 'show', 'project', '@madeup-video/storefront', '--json'],
-    { cwd: root, encoding: 'utf8' },
-  );
+test('locates the storefront and admin projects at their canonical roots', async () => {
+  for (const [projectName, expectedRoot] of [
+    ['@madeup-video/storefront', 'apps/storefront'],
+    ['@madeup-video/admin', 'apps/admin'],
+    ['@madeup-video/admin-e2e', 'apps/admin-e2e'],
+  ]) {
+    const { stdout } = await exec(
+      'pnpm',
+      ['exec', 'nx', 'show', 'project', projectName, '--json'],
+      { cwd: root, encoding: 'utf8' },
+    );
 
-  assert.equal(JSON.parse(stdout).root, 'apps/storefront');
+    assert.equal(JSON.parse(stdout).root, expectedRoot, projectName);
+  }
 });
 
 test('keeps generated API output out of project inference', async () => {
@@ -104,6 +110,69 @@ test('preserves the accepted final storefront dependency edges', async () => {
   );
 });
 
+test('keeps the admin contract boundary free of server-only libraries', async () => {
+  const { stdout } = await exec(
+    'pnpm',
+    ['exec', 'nx', 'graph', '--file=stdout'],
+    { cwd: root, encoding: 'utf8' },
+  );
+  const graph = JSON.parse(stdout).graph;
+  const adminDependencies = graph.dependencies['@madeup-video/admin']
+    .map(({ target }) => target)
+    .sort();
+
+  assert.ok(adminDependencies.includes('@madeup-video/contracts'));
+  assert.deepEqual(
+    adminDependencies.filter((target) => [
+      '@madeup-video/database',
+      '@madeup-video/testing',
+    ].includes(target)),
+    [],
+  );
+  assert.deepEqual(
+    graph.nodes['@madeup-video/contracts'].data.tags.sort(),
+    ['runtime:universal', 'scope:rental', 'type:contract'],
+  );
+});
+
+test('shares only UI primitives with the admin', async () => {
+  const { stdout } = await exec(
+    'pnpm',
+    ['exec', 'nx', 'graph', '--file=stdout'],
+    { cwd: root, encoding: 'utf8' },
+  );
+  const graph = JSON.parse(stdout).graph;
+  const dependencies = graph.dependencies['@madeup-video/admin']
+    .map(({ target }) => target)
+    .sort();
+  const uiIndex = await readFile(
+    new URL('../../libs/ui/src/index.ts', import.meta.url),
+    'utf8',
+  );
+
+  assert.deepEqual(dependencies, [
+    '@madeup-video/contracts',
+    '@madeup-video/ui',
+  ]);
+  assert.deepEqual(uiIndex.trim().split('\n').sort(), [
+    'export { BrandLogo } from "./lib/brand-logo";',
+    'export { PosterArt } from "./lib/poster-art";',
+  ]);
+});
+
+test('provides host styles for the shared admin brand', async () => {
+  const [application, styles] = await Promise.all([
+    readFile(new URL('../../apps/admin/src/app/app.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../../apps/admin/src/app/app.css', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(application, /className="brand-link"/);
+  assert.match(styles, /--color-cream:\s*#fbf8f2/);
+  assert.match(styles, /--font-display:\s*Inter/);
+  assert.match(styles, /\.brand-link\s*\{[^}]*text-decoration:\s*none/);
+  assert.doesNotMatch(styles, /\.wordmark/);
+});
+
 test('keeps the complete storefront free of database imports', async () => {
   const sourceFiles = await storefrontSourceFiles(join(root, 'apps/storefront'));
   const violations = [];
@@ -132,6 +201,17 @@ test('tracks root Prisma sources as cached storefront build inputs', async () =>
     '{workspaceRoot}/prisma/**/*',
     '{workspaceRoot}/prisma.config.ts',
   ]);
+});
+
+test('tracks the admin API URL as a cached build input', async () => {
+  const project = JSON.parse(
+    await readFile(new URL('../../apps/admin/project.json', import.meta.url)),
+  );
+
+  assert.deepEqual(
+    project.targets.build.inputs.filter((input) => typeof input === 'object'),
+    [{ env: 'VITE_API_URL' }],
+  );
 });
 
 test('tracks and generates root Prisma sources for cached API builds', async () => {
@@ -167,10 +247,48 @@ test('repository aggregates cover the API and admin projects', async () => {
   assert.match(scripts.build, /@madeup-video\/admin/);
   assert.match(scripts.build, /--parallel=1/);
   assert.match(scripts.typecheck, /@madeup-video\/api-e2e/);
+  assert.match(scripts.typecheck, /@madeup-video\/admin/);
   assert.match(scripts.typecheck, /@madeup-video\/admin-e2e/);
   assert.match(scripts['test:api'], /@madeup-video\/api-e2e/);
-  assert.match(scripts['test:e2e'], /@madeup-video\/admin-e2e/);
   assert.match(scripts['test:all'], /test:api/);
+  assert.match(scripts['test:e2e'], /@madeup-video\/admin-e2e/);
+});
+
+test('lets the local admin E2E use a validated port override', async () => {
+  const config = await readFile(
+    new URL('../../apps/admin-e2e/playwright.config.ts', import.meta.url),
+    'utf8',
+  );
+  const viteConfig = await readFile(
+    new URL('../../apps/admin/vite.config.ts', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(config, /ADMIN_PORT/);
+  assert.match(config, /Number\.isSafeInteger/);
+  assert.match(config, /--port=\$\{adminPort\}/);
+  assert.match(viteConfig, /strictPort:\s*true/);
+});
+
+test('uses the shared contract boundary and keeps its E2E journey self-contained', async () => {
+  const [api, application, project, playwrightConfig] = await Promise.all([
+    readFile(new URL('../../apps/admin/src/app/api.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../../apps/admin/src/app/app.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../../apps/admin-e2e/project.json', import.meta.url), 'utf8'),
+    readFile(new URL('../../apps/admin-e2e/playwright.config.ts', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(api, /@madeup-video\/contracts/);
+  assert.doesNotMatch(api, /\.\/contracts/);
+  assert.match(application, /@madeup-video\/contracts/);
+  assert.doesNotMatch(application, /\.\/contracts/);
+  assert.match(application, /@madeup-video\/ui/);
+  assert.match(api, /safeParse|\.parse\(/);
+  assert.match(project, /@madeup-video\/api/);
+  assert.match(project, /prepare-test-database/);
+  assert.match(playwrightConfig, /API_PORT/);
+  assert.match(playwrightConfig, /@madeup-video\/api:dev/);
+  assert.equal((playwrightConfig.match(/reuseExistingServer:\s*false/g) ?? []).length, 2);
 });
 
 test('CI validates the complete API and storefront workspace', async () => {

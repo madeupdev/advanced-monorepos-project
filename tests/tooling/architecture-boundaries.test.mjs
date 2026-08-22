@@ -1,10 +1,38 @@
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { execFile } from 'node:child_process';
+import { before, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 
 import { ESLint } from 'eslint';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
+const exec = promisify(execFile);
+
+function projectGraphCommand(platform, commandInterpreter) {
+  const args = ['exec', 'nx', 'show', 'projects', '--json'];
+
+  if (platform === 'win32') {
+    return {
+      command: commandInterpreter,
+      args: ['/d', '/s', '/c', 'pnpm.cmd', ...args],
+    };
+  }
+
+  return { command: 'pnpm', args };
+}
+
+before(async () => {
+  const { command, args } = projectGraphCommand(
+    process.platform,
+    process.env.ComSpec ?? 'cmd.exe',
+  );
+
+  await exec(command, args, {
+    cwd: root,
+    encoding: 'utf8',
+  });
+});
 
 async function boundaryMessages(source, filePath) {
   const eslint = new ESLint({ cwd: root });
@@ -26,6 +54,18 @@ test('rejects a browser project importing the database project', async () => {
     messages.map(({ message }) => message).join('\n'),
     /runtime:browser|type:ui/,
   );
+});
+
+test('launches graph initialization through cmd.exe on Windows', () => {
+  assert.deepEqual(projectGraphCommand('win32', 'cmd.exe'), {
+    command: 'cmd.exe',
+    args: ['/d', '/s', '/c', 'pnpm.cmd', 'exec', 'nx', 'show', 'projects', '--json'],
+  });
+
+  assert.deepEqual(projectGraphCommand('darwin', 'cmd.exe'), {
+    command: 'pnpm',
+    args: ['exec', 'nx', 'show', 'projects', '--json'],
+  });
 });
 
 test('rejects a cross-project relative import that bypasses the public entry point', async () => {
