@@ -333,9 +333,6 @@ export async function main(argv = process.argv.slice(2)) {
   if (register.courseVersion !== exactInputs.courseVersion) {
     throw new Error('Requested course version does not match the private register');
   }
-  if (!register.states.some(({ sourceCommit }) => sourceCommit === exactInputs.projectCommit)) {
-    throw new Error('Requested project commit is not registered for recovery');
-  }
   const result = await runRecoveryRehearsal({
     register,
     projectDirectory,

@@ -6,8 +6,18 @@ import { test } from 'node:test';
 
 import {
   builderRegister,
+  parseArguments,
   runRecoveryRehearsal,
 } from '../../tools/course-recovery/rehearse.mjs';
+
+test('requires one project-commit argument among closed rehearsal options', () => {
+  const args = ['--register', 'r', '--validator', 'v', '--authoring', 'a', '--project', 'p', '--cli-builder', 'c', '--output', 'o', '--course-version', '1.0.0', '--authoring-commit', 'a'.repeat(40), '--project-commit', 'b'.repeat(40), '--cli-version', '1.0.0', '--cli-tag', 'v1.0.0', '--cli-sha256', 'c'.repeat(64)];
+  assert.equal(parseArguments(args).get('--project-commit'), 'b'.repeat(40));
+  assert.throws(() => parseArguments(args.filter((value) => value !== '--project-commit' && value !== 'b'.repeat(40))), /Missing/);
+  assert.throws(() => parseArguments([...args, '--project-commit', 'b'.repeat(40)]), /Invalid/);
+  assert.throws(() => parseArguments([...args, '--unknown', 'x']), /Invalid/);
+  assert.throws(() => parseArguments([...args, '--project-commit']), /Invalid/);
+});
 
 function command(executable, ...arguments_) {
   return { executable, arguments: arguments_ };

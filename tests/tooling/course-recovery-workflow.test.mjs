@@ -17,6 +17,7 @@ test('uses only workflow_dispatch with exact fail-closed input validation', asyn
   assert.doesNotMatch(source, /\n\s+(?:push|pull_request|schedule|workflow_run):/);
   for (const input of [
     'course_version',
+    'project_commit',
     'authoring_commit',
     'cli_version',
     'cli_tag',
@@ -28,6 +29,17 @@ test('uses only workflow_dispatch with exact fail-closed input validation', asyn
   assert.match(source, /\^\[a-f0-9\]\{40\}\$/);
   assert.match(source, /\^\[a-f0-9\]\{64\}\$/);
   assert.match(source, /cliTag !== `v\$\{cliVersion\}`/);
+});
+
+test('pins the exact project checkout, runtime, PostgreSQL image, and complete upload allowlist', async () => {
+  const source = await workflow();
+  assert.match(source, /ref: \$\{\{ inputs\.project_commit \}\}/);
+  assert.match(source, /test "\$\(git rev-parse --verify 'HEAD\^\{commit\}'\)" = "\$PROJECT_COMMIT"/);
+  assert.match(source, /merge-base --is-ancestor "\$PROJECT_COMMIT" origin\/main/);
+  assert.match(source, /node-version: 24\.18\.0/);
+  assert.match(source, /pnpm@11\.17\.0/);
+  assert.match(source, /postgres:17@sha256:7958605b474b3d264a969cb3a123d6aa00ad1e1fe9da8a69984dabb704d93317/);
+  for (const state of ['S06-L01-start', 'S06-L02-start', 'S06-L03-start', 'S06-L04-start', 'S06-final']) assert.match(source, new RegExp(`${state}\\.tar\\.gz`));
 });
 
 test('uses the protected environment, exact main ref, and read-only permissions', async () => {
