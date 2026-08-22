@@ -26,6 +26,38 @@ function clients(steps = []) {
   return { calls, createClient };
 }
 
+function errorTree(error) {
+  const nodes = [];
+  const seen = new Set();
+  const visit = (value) => {
+    if (!(value instanceof Error) || seen.has(value)) return;
+    seen.add(value);
+    nodes.push(value);
+    if (value instanceof AggregateError) value.errors.forEach(visit);
+    visit(value.cause);
+  };
+  visit(error);
+  return nodes;
+}
+
+function errorTreeMessages(error) {
+  return errorTree(error).map(({ message }) => message);
+}
+
+function assertErrorTreeRedacted(error, values) {
+  const messages = errorTreeMessages(error).join('\n');
+  for (const value of values) assert.doesNotMatch(messages, new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.equal(errorTree(error).some(({ cause }) => cause !== undefined), false);
+}
+
+test('collects messages from nested aggregate errors and causes', () => {
+  const error = new AggregateError([
+    new Error('first'),
+    new AggregateError([new Error('second')], 'nested', { cause: new Error('cause') }),
+  ], 'outer');
+  assert.deepEqual(errorTreeMessages(error), ['outer', 'first', 'nested', 'second', 'cause']);
+});
+
 test('derives distinct portable names without exposing the state ID', () => {
   const first = databaseNames('S01-L01-start', 0);
   assert.match(first.primary, /^course_recovery_[0-9]{3}_[a-f0-9]{12}$/);
@@ -73,8 +105,12 @@ test('keeps every sanitized final readiness query and close failure', async () =
       assert.equal(error instanceof AggregateError, true);
       assert.equal(error.errors.length, 2);
       assert.match(error.message, /PostgreSQL health check failed/);
-      assert.doesNotMatch(JSON.stringify(error), /private password|private%20password/);
-      assert.equal(error.cause, undefined);
+      assert.deepEqual(errorTreeMessages(error), [
+        'PostgreSQL health check failed: PostgreSQL readiness client cleanup failed',
+        'query [REDACTED]',
+        'close [REDACTED]',
+      ]);
+      assertErrorTreeRedacted(error, ['private password', 'private%20password']);
       return true;
     },
   );
@@ -120,7 +156,12 @@ test('keeps create query and close failures as separate sanitized errors', async
     (error) => {
       assert.equal(error instanceof AggregateError, true);
       assert.equal(error.errors.length, 2);
-      assert.doesNotMatch(JSON.stringify(error), /private password|private%20password/);
+      assert.deepEqual(errorTreeMessages(error), [
+        'PostgreSQL database creation failed',
+        'create [REDACTED]',
+        'create close [REDACTED]',
+      ]);
+      assertErrorTreeRedacted(error, ['private password', 'private%20password']);
       return true;
     },
   );
@@ -133,7 +174,8 @@ test('preserves a sanitized action failure when cleanup succeeds', async () => {
     (error) => {
       assert.equal(error instanceof AggregateError, false);
       assert.match(error.message, /verification \[REDACTED\]/);
-      assert.doesNotMatch(JSON.stringify(error), /private password/);
+      assert.deepEqual(errorTreeMessages(error), ['verification [REDACTED]']);
+      assertErrorTreeRedacted(error, ['private password', 'private%20password']);
       return true;
     },
   );
@@ -147,7 +189,11 @@ test('rejects with cleanup failures after a successful action', async () => {
       assert.equal(error instanceof AggregateError, true);
       assert.equal(error.errors.length, 1);
       assert.match(error.message, /PostgreSQL state cleanup failed/);
-      assert.doesNotMatch(JSON.stringify(error), /private password/);
+      assert.deepEqual(errorTreeMessages(error), [
+        'PostgreSQL state cleanup failed',
+        'cleanup [REDACTED]',
+      ]);
+      assertErrorTreeRedacted(error, ['private password', 'private%20password']);
       return true;
     },
   );
@@ -184,7 +230,9 @@ test('continues reverse cleanup after action and cleanup failures, aggregating r
     (error) => {
       assert.equal(error instanceof AggregateError, true);
       assert.equal(error.errors.length, 7);
-      assert.doesNotMatch(`${error.message}\n${error.errors.map((item) => item.message).join('\n')}`, /private password|private%20password|postgresql:\/\//);
+      assertErrorTreeRedacted(error, [
+        'private password', 'private%20password', rawUrl, testUrl,
+      ]);
       return true;
     },
   );
