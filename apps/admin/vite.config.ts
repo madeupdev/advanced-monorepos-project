@@ -9,6 +9,9 @@ export default defineConfig({
       '@madeup-video/contracts': fileURLToPath(
         new URL('../../libs/contracts/src/index.ts', import.meta.url),
       ),
+      '@madeup-video/ui': fileURLToPath(
+        new URL('../../libs/ui/src/index.ts', import.meta.url),
+      ),
     },
   },
   server: {

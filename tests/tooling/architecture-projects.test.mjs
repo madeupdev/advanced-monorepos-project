@@ -110,7 +110,7 @@ test('preserves the accepted final storefront dependency edges', async () => {
   );
 });
 
-test('gives the admin only shared contracts at its contract boundary', async () => {
+test('keeps the admin contract boundary free of server-only libraries', async () => {
   const { stdout } = await exec(
     'pnpm',
     ['exec', 'nx', 'graph', '--file=stdout'],
@@ -121,7 +121,7 @@ test('gives the admin only shared contracts at its contract boundary', async () 
     .map(({ target }) => target)
     .sort();
 
-  assert.deepEqual(adminDependencies, ['@madeup-video/contracts']);
+  assert.ok(adminDependencies.includes('@madeup-video/contracts'));
   assert.deepEqual(
     adminDependencies.filter((target) => [
       '@madeup-video/database',
@@ -133,6 +133,31 @@ test('gives the admin only shared contracts at its contract boundary', async () 
     graph.nodes['@madeup-video/contracts'].data.tags.sort(),
     ['runtime:universal', 'scope:rental', 'type:contract'],
   );
+});
+
+test('shares only UI primitives with the admin', async () => {
+  const { stdout } = await exec(
+    'pnpm',
+    ['exec', 'nx', 'graph', '--file=stdout'],
+    { cwd: root, encoding: 'utf8' },
+  );
+  const graph = JSON.parse(stdout).graph;
+  const dependencies = graph.dependencies['@madeup-video/admin']
+    .map(({ target }) => target)
+    .sort();
+  const uiIndex = await readFile(
+    new URL('../../libs/ui/src/index.ts', import.meta.url),
+    'utf8',
+  );
+
+  assert.deepEqual(dependencies, [
+    '@madeup-video/contracts',
+    '@madeup-video/ui',
+  ]);
+  assert.deepEqual(uiIndex.trim().split('\n').sort(), [
+    'export { BrandLogo } from "./lib/brand-logo";',
+    'export { PosterArt } from "./lib/poster-art";',
+  ]);
 });
 
 test('keeps the complete storefront free of database imports', async () => {
@@ -244,7 +269,7 @@ test('uses the shared contract boundary and keeps its E2E journey self-contained
   assert.doesNotMatch(api, /\.\/contracts/);
   assert.match(application, /@madeup-video\/contracts/);
   assert.doesNotMatch(application, /\.\/contracts/);
-  assert.doesNotMatch(application, /@madeup-video\/ui/);
+  assert.match(application, /@madeup-video\/ui/);
   assert.match(api, /safeParse|\.parse\(/);
   assert.match(project, /@madeup-video\/api/);
   assert.match(project, /prepare-test-database/);

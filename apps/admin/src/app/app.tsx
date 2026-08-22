@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { RentalSummary, TitleSummary } from '@madeup-video/contracts';
+import { BrandLogo } from '@madeup-video/ui';
 
 import { listRentals, listTitles } from './api';
 import './app.css';
@@ -102,9 +103,8 @@ export function App() {
     <>
       <a className="skip-link" href="#content">Skip to content</a>
       <header className="site-header">
-        <a className="wordmark" href="#titles" onClick={() => setView('titles')}>
-          <span aria-hidden="true">MUV</span>
-          <span>Made Up Video</span>
+        <a href="#titles" onClick={() => setView('titles')}>
+          <BrandLogo variant="full" />
         </a>
         <p>Staff inventory</p>
         <nav aria-label="Admin views">
