@@ -38,6 +38,12 @@ function secretValues(environment, urls = []) {
 }
 
 function cleanError(error, secrets) {
+  if (error instanceof AggregateError) {
+    return new AggregateError(
+      error.errors.map((child) => cleanError(child, secrets)),
+      redactSensitiveValues(error.message, secrets),
+    );
+  }
   return new Error(redactSensitiveValues(error instanceof Error ? error.message : String(error), secrets));
 }
 
@@ -94,7 +100,11 @@ export async function assertPostgresHealthy({
     failure = failureFrom(failures, 'PostgreSQL readiness client cleanup failed');
     if (attempt + 1 < attempts) await sleep(READINESS_DELAY_MILLIS);
   }
-  throw new Error(`PostgreSQL health check failed: ${redactSensitiveValues(failure.message, secrets)}`);
+  const message = `PostgreSQL health check failed: ${redactSensitiveValues(failure.message, secrets)}`;
+  if (failure instanceof AggregateError) {
+    throw new AggregateError(failure.errors, message);
+  }
+  throw new Error(message);
 }
 
 export async function withIsolatedDatabases({

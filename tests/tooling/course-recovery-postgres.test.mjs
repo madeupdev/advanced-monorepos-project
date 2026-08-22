@@ -16,7 +16,7 @@ function clients(steps = []) {
       async connect() { if (step.connect) throw step.connect; },
       async query(text, values) {
         call.queries.push({ text, values });
-        const failure = step.query?.shift?.() ?? step.query;
+        const failure = Array.isArray(step.query) ? step.query.shift() : step.query;
         if (failure) throw failure;
         return { rows: [] };
       },
@@ -56,6 +56,30 @@ test('retries readiness only before a later attempt and stops after the final fa
   assert.deepEqual(sleeps, [250, 250]);
 });
 
+test('uses fresh readiness clients and sleeps exactly once before a later success', async () => {
+  const fixture = clients([{ connect: new Error('first private password') }, {}]);
+  const sleeps = [];
+  await assertPostgresHealthy({ environment, createClient: fixture.createClient, sleep: async (ms) => sleeps.push(ms), attempts: 3 });
+  assert.equal(fixture.calls.length, 2);
+  assert.equal(fixture.calls.every(({ ended }) => ended), true);
+  assert.deepEqual(sleeps, [250]);
+});
+
+test('keeps every sanitized final readiness query and close failure', async () => {
+  const fixture = clients([{ query: new Error('query private password'), end: new Error('close private%20password') }]);
+  await assert.rejects(
+    assertPostgresHealthy({ environment, createClient: fixture.createClient, sleep: async () => {}, attempts: 1 }),
+    (error) => {
+      assert.equal(error instanceof AggregateError, true);
+      assert.equal(error.errors.length, 2);
+      assert.match(error.message, /PostgreSQL health check failed/);
+      assert.doesNotMatch(JSON.stringify(error), /private password|private%20password/);
+      assert.equal(error.cause, undefined);
+      return true;
+    },
+  );
+});
+
 test('creates and force-cleans names through safe SQL, never host PostgreSQL commands', async () => {
   const fixture = clients();
   let stateEnvironment;
@@ -87,6 +111,46 @@ test('cleans the first database after a partial second create failure', async ()
     'SELECT 1', `CREATE DATABASE "${names.primary}"`, `CREATE DATABASE "${names.test}"`,
     'SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1 AND pid <> pg_backend_pid()', `DROP DATABASE IF EXISTS "${names.primary}"`,
   ]);
+});
+
+test('keeps create query and close failures as separate sanitized errors', async () => {
+  const fixture = clients([{}, { query: new Error('create private password'), end: new Error('create close private%20password') }]);
+  await assert.rejects(
+    withIsolatedDatabases({ stateId: 'S03-L03-start', index: 3, environment, createClient: fixture.createClient, sleep: async () => {}, action: async () => assert.fail('must not act') }),
+    (error) => {
+      assert.equal(error instanceof AggregateError, true);
+      assert.equal(error.errors.length, 2);
+      assert.doesNotMatch(JSON.stringify(error), /private password|private%20password/);
+      return true;
+    },
+  );
+});
+
+test('preserves a sanitized action failure when cleanup succeeds', async () => {
+  const fixture = clients();
+  await assert.rejects(
+    withIsolatedDatabases({ stateId: 'S03-L04-start', index: 3, environment, createClient: fixture.createClient, sleep: async () => {}, action: async () => { throw new Error('verification private password'); } }),
+    (error) => {
+      assert.equal(error instanceof AggregateError, false);
+      assert.match(error.message, /verification \[REDACTED\]/);
+      assert.doesNotMatch(JSON.stringify(error), /private password/);
+      return true;
+    },
+  );
+});
+
+test('rejects with cleanup failures after a successful action', async () => {
+  const fixture = clients([{}, {}, {}, { query: [new Error('cleanup private password'), undefined] }, {}]);
+  await assert.rejects(
+    withIsolatedDatabases({ stateId: 'S03-L05-start', index: 3, environment, createClient: fixture.createClient, sleep: async () => {}, action: async () => 'complete' }),
+    (error) => {
+      assert.equal(error instanceof AggregateError, true);
+      assert.equal(error.errors.length, 1);
+      assert.match(error.message, /PostgreSQL state cleanup failed/);
+      assert.doesNotMatch(JSON.stringify(error), /private password/);
+      return true;
+    },
+  );
 });
 
 test('records database ownership before a create-client close failure so cleanup cannot leak it', async () => {
