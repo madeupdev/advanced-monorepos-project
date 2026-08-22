@@ -140,6 +140,17 @@ test('tracks root Prisma sources as cached storefront build inputs', async () =>
   ]);
 });
 
+test('tracks the admin API URL as a cached build input', async () => {
+  const project = JSON.parse(
+    await readFile(new URL('../../apps/admin/project.json', import.meta.url)),
+  );
+
+  assert.deepEqual(
+    project.targets.build.inputs.filter((input) => typeof input === 'object'),
+    [{ env: 'VITE_API_URL' }],
+  );
+});
+
 test('tracks and generates root Prisma sources for cached API builds', async () => {
   const project = JSON.parse(
     await readFile(new URL('../../apps/api/project.json', import.meta.url)),

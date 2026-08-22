@@ -8,6 +8,7 @@
     "build": {
       "executor": "nx:run-commands",
       "outputs": ["{workspaceRoot}/dist/apps/admin"],
+      "inputs": ["default", "^default", { "env": "VITE_API_URL" }],
       "options": {
         "cwd": "apps/admin",
         "command": "pnpm exec vite build"
