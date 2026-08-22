@@ -1,10 +1,21 @@
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { execFile } from 'node:child_process';
+import { before, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 
 import { ESLint } from 'eslint';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
+const exec = promisify(execFile);
+const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+
+before(async () => {
+  await exec(pnpmCommand, ['exec', 'nx', 'show', 'projects', '--json'], {
+    cwd: root,
+    encoding: 'utf8',
+  });
+});
 
 async function boundaryMessages(source, filePath) {
   const eslint = new ESLint({ cwd: root });
