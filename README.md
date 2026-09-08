@@ -94,14 +94,29 @@ generates the Prisma client. It applies committed migrations to the development
 database and loads its deterministic fixtures.
 
 Setup is idempotent and does not start the persistent application development
-processes. Start the API and storefront together:
+processes. Start the full local workflow:
 
 ```sh
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The API listens on
-`http://localhost:3333`.
+`pnpm dev` starts the API, storefront, and admin applications together. Open
+the storefront at [http://localhost:3000](http://localhost:3000), use the API
+at `http://localhost:3333`, and open the admin application at
+`http://127.0.0.1:3200`.
+
+Use a focused workflow when only part of the application needs to run:
+
+```sh
+pnpm dev:api
+pnpm dev:storefront
+pnpm dev:admin
+pnpm dev:full
+```
+
+`dev:api` starts only the API. `dev:storefront` starts the API and storefront,
+`dev:admin` starts the API and admin application, and `dev:full` is the same
+full API, storefront, and admin workflow as `pnpm dev`.
 
 The deterministic seed contains six titles, fifteen physical copies, and no
 rentals.
