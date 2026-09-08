@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { readStorefrontBrowserConfig } from "../lib/config/browser";
 import styles from "./rental-actions.module.css";
 
 type RentButtonProps = {
@@ -16,8 +17,7 @@ type ErrorPayload = {
   };
 };
 
-const browserApiOrigin =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:3333";
+const { apiOrigin: browserApiOrigin } = readStorefrontBrowserConfig();
 
 export function RentButton({ titleId, titleName }: RentButtonProps) {
   const router = useRouter();

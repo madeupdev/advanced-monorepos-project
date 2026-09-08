@@ -1,16 +1,14 @@
 import type { INestApplication } from "@nestjs/common";
+import { readApiConfig, type ApiConfig } from "./config";
 import { InvalidRentalJsonFilter } from "./invalid-rental-json.filter";
 
-const defaultStorefrontOrigin = "http://localhost:3000";
-const defaultAdminOrigin = "http://127.0.0.1:3200";
-
-export function configureApi(app: INestApplication): INestApplication {
+export function configureApi(
+  app: INestApplication,
+  config: Pick<ApiConfig, "storefrontOrigin" | "adminOrigin"> = readApiConfig(),
+): INestApplication {
   app.setGlobalPrefix("api");
   app.enableCors({
-    origin: [
-      process.env.STOREFRONT_URL ?? defaultStorefrontOrigin,
-      process.env.ADMIN_URL ?? defaultAdminOrigin,
-    ],
+    origin: [config.storefrontOrigin, config.adminOrigin],
   });
   app.useGlobalFilters(new InvalidRentalJsonFilter());
 

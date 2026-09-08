@@ -7,11 +7,9 @@ import {
   type TitleSummary,
   type RentalSummary,
 } from "@madeup-video/contracts";
+import { readStorefrontServerConfig } from "./config/server";
 
-const serverApiOrigin =
-  process.env.API_URL ??
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://127.0.0.1:3333";
+const { apiOrigin: serverApiOrigin } = readStorefrontServerConfig();
 
 export async function listTitlesFromApi(): Promise<TitleSummary[]> {
   const response = await fetch(`${serverApiOrigin}/api/titles`, {

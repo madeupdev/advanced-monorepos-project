@@ -238,17 +238,42 @@ test('tracks root Prisma sources as cached storefront build inputs', async () =>
     '^default',
     '{workspaceRoot}/prisma/**/*',
     '{workspaceRoot}/prisma.config.ts',
+    { env: 'API_PORT' },
+    { env: 'STOREFRONT_PORT' },
+    { env: 'API_URL' },
+    { env: 'NEXT_PUBLIC_API_URL' },
   ]);
 });
 
-test('tracks the admin API URL as a cached build input', async () => {
+test('tracks the admin topology as cached build inputs', async () => {
   const project = JSON.parse(
     await readFile(new URL('../../apps/admin/project.json', import.meta.url)),
   );
 
   assert.deepEqual(
     project.targets.build.inputs.filter((input) => typeof input === 'object'),
-    [{ env: 'VITE_API_URL' }],
+    [
+      { env: 'API_PORT' },
+      { env: 'ADMIN_PORT' },
+      { env: 'API_URL' },
+      { env: 'VITE_API_URL' },
+    ],
+  );
+});
+
+test('tracks storefront public and server API origins as cached build inputs', async () => {
+  const project = JSON.parse(
+    await readFile(new URL('../../apps/storefront/project.json', import.meta.url)),
+  );
+
+  assert.deepEqual(
+    project.targets.build.inputs.filter((input) => typeof input === 'object'),
+    [
+      { env: 'API_PORT' },
+      { env: 'STOREFRONT_PORT' },
+      { env: 'API_URL' },
+      { env: 'NEXT_PUBLIC_API_URL' },
+    ],
   );
 });
 
@@ -273,6 +298,17 @@ test('models the API dev server as a continuous dependency of both frontends', a
     }),
     /postgres|docker|db:/i,
   );
+});
+
+test('launches Next through the storefront port adapter for development and start', async () => {
+  const project = JSON.parse(
+    await readFile(new URL('../../apps/storefront/project.json', import.meta.url)),
+  );
+
+  assert.equal(project.targets.dev.options.command, 'node apps/storefront/scripts/next.mjs dev');
+  assert.equal(project.targets.dev.options.cwd, '.');
+  assert.equal(project.targets.start.options.command, 'node apps/storefront/scripts/next.mjs start');
+  assert.equal(project.targets.start.options.cwd, '.');
 });
 
 test('launches task-graph inspection through Node without a platform command shim', () => {
