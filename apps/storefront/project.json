@@ -34,6 +34,12 @@
     "dev": {
       "executor": "nx:run-commands",
       "continuous": true,
+      "dependsOn": [
+        {
+          "projects": ["@madeup-video/api"],
+          "target": "dev"
+        }
+      ],
       "options": {
         "cwd": "apps/storefront",
         "command": "pnpm exec next dev"

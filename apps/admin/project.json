@@ -17,6 +17,12 @@
     "dev": {
       "continuous": true,
       "executor": "nx:run-commands",
+      "dependsOn": [
+        {
+          "projects": ["@madeup-video/api"],
+          "target": "dev"
+        }
+      ],
       "options": {
         "cwd": "apps/admin",
         "command": "pnpm exec vite"

@@ -29,15 +29,10 @@ test("keeps command expectations independent of POSIX-only workspace paths", asy
 test("maps each named local-development profile to its stable projects", () => {
   assert.deepEqual(developmentProjects("api"), ["@madeup-video/api"]);
   assert.deepEqual(developmentProjects("storefront"), [
-    "@madeup-video/api",
     "@madeup-video/storefront",
   ]);
-  assert.deepEqual(developmentProjects("admin"), [
-    "@madeup-video/api",
-    "@madeup-video/admin",
-  ]);
+  assert.deepEqual(developmentProjects("admin"), ["@madeup-video/admin"]);
   assert.deepEqual(developmentProjects("full"), [
-    "@madeup-video/api",
     "@madeup-video/storefront",
     "@madeup-video/admin",
   ]);
@@ -78,7 +73,7 @@ test("builds a direct Node command for the installed Nx CLI", () => {
         workspaceNxCli,
         "run-many",
         "--target=dev",
-        "--projects=@madeup-video/api,@madeup-video/admin",
+        "--projects=@madeup-video/admin",
       ],
     },
   );
@@ -104,7 +99,7 @@ test("returns and prints the dry-run command without spawning", async () => {
       workspaceNxCli,
       "run-many",
       "--target=dev",
-      "--projects=@madeup-video/api,@madeup-video/storefront",
+      "--projects=@madeup-video/storefront",
     ],
   });
   assert.match(output.join(""), /@madeup-video\/storefront/);
@@ -189,5 +184,6 @@ test("CLI dry-run is inspectable without starting Nx", async () => {
 
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /node_modules[\\/]nx[\\/]dist[\\/]bin[\\/]nx\.js/);
-  assert.match(result.stdout, /@madeup-video\/api,@madeup-video\/admin/);
+  assert.match(result.stdout, /--projects=@madeup-video\/admin(?:\s|$)/);
+  assert.doesNotMatch(result.stdout, /--projects=[^\n]*@madeup-video\/api/);
 });

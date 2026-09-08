@@ -1,13 +1,17 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { readdir, readFile } from 'node:fs/promises';
-import { join, relative } from 'node:path';
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { delimiter, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { test } from 'node:test';
 
 const exec = promisify(execFile);
 const root = fileURLToPath(new URL('../..', import.meta.url));
+const nxCli = fileURLToPath(
+  new URL('../../node_modules/nx/dist/bin/nx.js', import.meta.url),
+);
 const ignoredStorefrontDirectories = new Set([
   '.next',
   'node_modules',
@@ -29,6 +33,40 @@ async function storefrontSourceFiles(directory) {
   }
 
   return files.sort();
+}
+
+function createTaskGraphCommand(graphPath) {
+  const nodeSearchPaths = [
+    join(root, 'node_modules/nx/node_modules'),
+    join(root, 'node_modules'),
+    join(root, 'node_modules/.pnpm/node_modules'),
+    process.env.NODE_PATH,
+  ].filter(Boolean);
+
+  return {
+    executable: process.execPath,
+    args: [
+      nxCli,
+      'run-many',
+      '--target=dev',
+      '--projects=@madeup-video/storefront,@madeup-video/admin',
+      `--graph=${graphPath}`,
+    ],
+    options: {
+      cwd: root,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        NODE_PATH: nodeSearchPaths.join(delimiter),
+        NX_CACHE_DIRECTORY: join(root, '.nx/cache'),
+        NX_INTERACTIVE: 'false',
+        NX_NO_CLOUD: 'true',
+        NX_TUI: 'false',
+        NX_WORKSPACE_DATA_DIRECTORY: join(root, '.nx/workspace-data'),
+      },
+      shell: false,
+    },
+  };
 }
 const courseTags = new Map([
   ['@madeup-video/admin', ['runtime:browser', 'scope:rental', 'type:app']],
@@ -211,6 +249,82 @@ test('tracks the admin API URL as a cached build input', async () => {
   assert.deepEqual(
     project.targets.build.inputs.filter((input) => typeof input === 'object'),
     [{ env: 'VITE_API_URL' }],
+  );
+});
+
+test('models the API dev server as a continuous dependency of both frontends', async () => {
+  const [api, storefront, admin] = await Promise.all([
+    readFile(new URL('../../apps/api/project.json', import.meta.url), 'utf8'),
+    readFile(new URL('../../apps/storefront/project.json', import.meta.url), 'utf8'),
+    readFile(new URL('../../apps/admin/project.json', import.meta.url), 'utf8'),
+  ]).then((files) => files.map(JSON.parse));
+  const apiDependency = {
+    projects: ['@madeup-video/api'],
+    target: 'dev',
+  };
+
+  assert.equal(api.targets.dev.continuous, true);
+  assert.deepEqual(storefront.targets.dev.dependsOn, [apiDependency]);
+  assert.deepEqual(admin.targets.dev.dependsOn, [apiDependency]);
+  assert.doesNotMatch(
+    JSON.stringify({
+      storefront: storefront.targets.dev,
+      admin: admin.targets.dev,
+    }),
+    /postgres|docker|db:/i,
+  );
+});
+
+test('launches task-graph inspection through Node without a platform command shim', () => {
+  const graphPath = join(tmpdir(), 'task-graph.json');
+  const command = createTaskGraphCommand(graphPath);
+
+  assert.equal(command.executable, process.execPath);
+  assert.match(command.args[0], /node_modules[\\/]nx[\\/]dist[\\/]bin[\\/]nx\.js$/);
+  assert.deepEqual(command.args.slice(1), [
+    'run-many',
+    '--target=dev',
+    '--projects=@madeup-video/storefront,@madeup-video/admin',
+    `--graph=${graphPath}`,
+  ]);
+  assert.equal(command.options.shell, false);
+});
+
+test('deduplicates the continuous API in the selected frontend task graph', async (t) => {
+  const temporaryDirectory = await mkdtemp(
+    join(tmpdir(), 'madeup-video-section-seven-graph-'),
+  );
+  const graphPath = join(temporaryDirectory, 'task-graph.json');
+  t.after(() => rm(temporaryDirectory, { recursive: true, force: true }));
+  const command = createTaskGraphCommand(graphPath);
+
+  await exec(command.executable, command.args, command.options);
+
+  const { tasks: taskGraph } = JSON.parse(
+    await readFile(graphPath, 'utf8'),
+  );
+  const apiTasks = Object.values(taskGraph.tasks).filter(
+    ({ target }) =>
+      target.project === '@madeup-video/api' && target.target === 'dev',
+  );
+
+  assert.equal(apiTasks.length, 1);
+  assert.equal(apiTasks[0].continuous, true);
+
+  for (const frontend of [
+    '@madeup-video/storefront:dev',
+    '@madeup-video/admin:dev',
+  ]) {
+    assert.deepEqual(taskGraph.continuousDependencies[frontend], [
+      apiTasks[0].id,
+    ]);
+  }
+
+  assert.deepEqual(
+    Object.values(taskGraph.tasks).filter(({ target }) =>
+      /postgres|database/i.test(target.project),
+    ),
+    [],
   );
 });
 

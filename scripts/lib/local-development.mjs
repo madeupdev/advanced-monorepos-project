@@ -3,13 +3,9 @@ import { resolve } from "node:path";
 
 const PROFILE_PROJECTS = Object.freeze({
   api: ["@madeup-video/api"],
-  storefront: ["@madeup-video/api", "@madeup-video/storefront"],
-  admin: ["@madeup-video/api", "@madeup-video/admin"],
-  full: [
-    "@madeup-video/api",
-    "@madeup-video/storefront",
-    "@madeup-video/admin",
-  ],
+  storefront: ["@madeup-video/storefront"],
+  admin: ["@madeup-video/admin"],
+  full: ["@madeup-video/storefront", "@madeup-video/admin"],
 });
 
 const PROFILE_NAMES = Object.keys(PROFILE_PROJECTS);
