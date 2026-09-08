@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
@@ -12,6 +13,18 @@ import {
 } from "../../scripts/lib/local-development.mjs";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
+const workspaceRoot = resolve(root, "fixtures", "workspace");
+const workspaceNxCli = resolve(
+  workspaceRoot,
+  "node_modules/nx/dist/bin/nx.js",
+);
+
+test("keeps command expectations independent of POSIX-only workspace paths", async () => {
+  const testSource = await readFile(new URL(import.meta.url), "utf8");
+  const hardCodedPosixRoot = ['"', "/", "workspace", '"'].join("");
+
+  assert.equal(testSource.includes(hardCodedPosixRoot), false);
+});
 
 test("maps each named local-development profile to its stable projects", () => {
   assert.deepEqual(developmentProjects("api"), ["@madeup-video/api"]);
@@ -56,13 +69,13 @@ for (const [profile, received] of [
 test("builds a direct Node command for the installed Nx CLI", () => {
   assert.deepEqual(
     createDevelopmentCommand("admin", {
-      rootDirectory: "/workspace",
+      rootDirectory: workspaceRoot,
       nodeExecutable: "node",
     }),
     {
       command: "node",
       args: [
-        "/workspace/node_modules/nx/dist/bin/nx.js",
+        workspaceNxCli,
         "run-many",
         "--target=dev",
         "--projects=@madeup-video/api,@madeup-video/admin",
@@ -75,7 +88,7 @@ test("returns and prints the dry-run command without spawning", async () => {
   let spawned = false;
   const output = [];
   const command = await runDevelopment("storefront", {
-    rootDirectory: "/workspace",
+    rootDirectory: workspaceRoot,
     nodeExecutable: "node",
     dryRun: true,
     write: (line) => output.push(line),
@@ -88,7 +101,7 @@ test("returns and prints the dry-run command without spawning", async () => {
   assert.deepEqual(command, {
     command: "node",
     args: [
-      "/workspace/node_modules/nx/dist/bin/nx.js",
+      workspaceNxCli,
       "run-many",
       "--target=dev",
       "--projects=@madeup-video/api,@madeup-video/storefront",
@@ -108,7 +121,7 @@ test("supervises one structured Nx child without a shell and preserves its failu
 
   await assert.rejects(
     runDevelopment("api", {
-      rootDirectory: "/workspace",
+      rootDirectory: workspaceRoot,
       nodeExecutable: "node",
       spawn,
     }),
@@ -118,12 +131,12 @@ test("supervises one structured Nx child without a shell and preserves its failu
   assert.deepEqual(calls, [[
     "node",
     [
-      "/workspace/node_modules/nx/dist/bin/nx.js",
+      workspaceNxCli,
       "run-many",
       "--target=dev",
       "--projects=@madeup-video/api",
     ],
-    { cwd: "/workspace", shell: false, stdio: "inherit" },
+    { cwd: workspaceRoot, shell: false, stdio: "inherit" },
   ]]);
 });
 
