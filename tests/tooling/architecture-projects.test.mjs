@@ -69,11 +69,11 @@ function createTaskGraphCommand(graphPath) {
   };
 }
 const courseTags = new Map([
-  ['@madeup-video/admin', ['runtime:browser', 'scope:rental', 'type:app']],
-  ['@madeup-video/admin-e2e', ['runtime:browser', 'scope:rental', 'type:test']],
   ['@madeup-video/storefront', ['runtime:universal', 'scope:storefront', 'type:app']],
   ['@madeup-video/api', ['runtime:server', 'scope:rental', 'type:app']],
   ['@madeup-video/api-e2e', ['runtime:server', 'scope:rental', 'type:test']],
+  ['@madeup-video/admin', ['runtime:browser', 'scope:rental', 'type:app']],
+  ['@madeup-video/admin-e2e', ['runtime:browser', 'scope:rental', 'type:test']],
   ['@madeup-video/contracts', ['runtime:universal', 'scope:rental', 'type:contract']],
   ['@madeup-video/rental-domain', ['runtime:universal', 'scope:rental', 'type:domain']],
   ['@madeup-video/database', ['runtime:server', 'scope:rental', 'type:data-access']],
@@ -81,7 +81,7 @@ const courseTags = new Map([
   ['@madeup-video/testing', ['runtime:server', 'scope:shared', 'type:test']],
 ]);
 
-test('models the storefront, admin, API projects, and five approved libraries', async () => {
+test('models the storefront, API, admin projects, and five approved libraries', async () => {
   const { stdout } = await exec('pnpm', ['exec', 'nx', 'show', 'projects', '--json'], {
     cwd: root,
     encoding: 'utf8',

@@ -6,9 +6,58 @@ const workflowPath = new URL(
   '../../.github/workflows/course-recovery-release.yml',
   import.meta.url,
 );
+const ciWorkflowPath = new URL('../../.github/workflows/ci.yml', import.meta.url);
 
 async function workflow() {
   return readFile(workflowPath, 'utf8');
+}
+
+async function ciWorkflow() {
+  return readFile(ciWorkflowPath, 'utf8');
+}
+
+const expectedUploadPaths = [
+  'S01-L01-start.tar.gz',
+  'S01-L02-start.tar.gz',
+  'S01-L03-start.tar.gz',
+  'S02-L01-start.tar.gz',
+  'S02-L02-start.tar.gz',
+  'S02-L03-start.tar.gz',
+  'S02-L04-start.tar.gz',
+  'S03-L01-start.tar.gz',
+  'S03-L02-start.tar.gz',
+  'S03-L03-start.tar.gz',
+  'S03-L04-start.tar.gz',
+  'S04-L01-start.tar.gz',
+  'S04-L02-start.tar.gz',
+  'S04-L03-start.tar.gz',
+  'S04-L04-start.tar.gz',
+  'S04-final.tar.gz',
+  'S05-L01-start.tar.gz',
+  'S05-L02-start.tar.gz',
+  'S05-L03-start.tar.gz',
+  'S05-L04-start.tar.gz',
+  'S05-L05-start.tar.gz',
+  'S05-final.tar.gz',
+  'S06-L01-start.tar.gz',
+  'S06-L02-start.tar.gz',
+  'S06-L03-start.tar.gz',
+  'S06-L04-start.tar.gz',
+  'S06-final.tar.gz',
+  'S07-L01-focused-workflows.tar.gz',
+  'S07-L02-task-dependencies.tar.gz',
+  'S07-L03-config-boundaries.tar.gz',
+  'S07-final.tar.gz',
+  'manifest.json',
+  'SHA256SUMS',
+].map((name) => `\${{ runner.temp }}/course-recovery-bundle/${name}`);
+
+function uploadPaths(source) {
+  const uploadStep = source.slice(source.indexOf('uses: actions/upload-artifact@'));
+  const step = uploadStep.split(/\n\s+- name:/, 1)[0];
+  const block = step.match(/\n\s+path: \|\n((?:\s+\$\{\{ runner\.temp \}\}\/course-recovery-bundle\/[^\n]+\n?)+)/);
+  assert.ok(block, 'upload-artifact must contain an explicit path block');
+  return block[1].trim().split('\n').map((line) => line.trim());
 }
 
 test('uses only workflow_dispatch with exact fail-closed input validation', async () => {
@@ -17,6 +66,7 @@ test('uses only workflow_dispatch with exact fail-closed input validation', asyn
   assert.doesNotMatch(source, /\n\s+(?:push|pull_request|schedule|workflow_run):/);
   for (const input of [
     'course_version',
+    'project_commit',
     'authoring_commit',
     'cli_version',
     'cli_tag',
@@ -28,6 +78,33 @@ test('uses only workflow_dispatch with exact fail-closed input validation', asyn
   assert.match(source, /\^\[a-f0-9\]\{40\}\$/);
   assert.match(source, /\^\[a-f0-9\]\{64\}\$/);
   assert.match(source, /cliTag !== `v\$\{cliVersion\}`/);
+});
+
+test('pins the exact project checkout, runtime, PostgreSQL image, and complete upload allowlist', async () => {
+  const source = await workflow();
+  const checkout = source.indexOf('ref: ${{ inputs.project_commit }}');
+  const head = source.indexOf(`test "$(git rev-parse --verify 'HEAD^{commit}')" = "$PROJECT_COMMIT"`);
+  const ancestry = source.indexOf('git merge-base --is-ancestor "$PROJECT_COMMIT" origin/main');
+  const install = source.indexOf('Install rehearsal dependencies from the project lockfile');
+  const rehearsal = source.indexOf('Rehearse every registered recovery state');
+  assert.ok(checkout > 0 && head > checkout && ancestry > head && install > ancestry && rehearsal > install);
+  assert.match(source, /PROJECT_COMMIT: \$\{\{ inputs\.project_commit \}\}/);
+  assert.match(source, /if \(!commit\.test\(projectCommit \?\? ""\)\) throw new Error\("Invalid exact project commit"\)/);
+  assert.match(source, /--project-commit "\$PROJECT_COMMIT"/);
+  assert.match(source, /node-version: 24\.18\.0/);
+  assert.match(source, /pnpm@11\.17\.0/);
+  assert.match(source, /image: postgres:17@sha256:7958605b474b3d264a969cb3a123d6aa00ad1e1fe9da8a69984dabb704d93317\n/);
+
+  const paths = uploadPaths(source);
+  assert.deepEqual(paths, expectedUploadPaths);
+  assert.equal(new Set(paths).size, 33);
+  assert.equal(paths.filter((path) => path.endsWith('.tar.gz')).length, 31);
+  assert.deepEqual(paths.slice(-2), [
+    '${{ runner.temp }}/course-recovery-bundle/manifest.json',
+    '${{ runner.temp }}/course-recovery-bundle/SHA256SUMS',
+  ]);
+  assert.equal(paths.some((path) => /[*?!\[\]]/.test(path)), false);
+  assert.equal(paths.every((path) => /(?:\.tar\.gz|manifest\.json|SHA256SUMS)$/.test(path)), true);
 });
 
 test('uses the protected environment, exact main ref, and read-only permissions', async () => {
@@ -118,6 +195,21 @@ test('uploads one short-lived fixed-name artifact using only the explicit bundle
     'S03-L02-start.tar.gz',
     'S03-L03-start.tar.gz',
     'S03-L04-start.tar.gz',
+    'S04-L01-start.tar.gz',
+    'S04-L02-start.tar.gz',
+    'S04-L03-start.tar.gz',
+    'S04-L04-start.tar.gz',
+    'S04-final.tar.gz',
+    'S05-L01-start.tar.gz',
+    'S05-L02-start.tar.gz',
+    'S05-L03-start.tar.gz',
+    'S05-L04-start.tar.gz',
+    'S05-L05-start.tar.gz',
+    'S05-final.tar.gz',
+    'S07-L01-focused-workflows.tar.gz',
+    'S07-L02-task-dependencies.tar.gz',
+    'S07-L03-config-boundaries.tar.gz',
+    'S07-final.tar.gz',
     'manifest.json',
     'SHA256SUMS',
   ]) {
@@ -127,6 +219,14 @@ test('uploads one short-lived fixed-name artifact using only the explicit bundle
   assert.doesNotMatch(
     uploadStep.split(/\n\s+- name:/, 1)[0],
     /authoring|delivery-states|node_modules|\.env|\.log|database|dump/i,
+  );
+});
+
+test('runs the portable local-development tests explicitly in Linux CI', async () => {
+  const source = await ciWorkflow();
+  assert.match(
+    source,
+    /name: Portable local-development tests\s+run: node --test tests\/tooling\/local-development\.test\.mjs/,
   );
 });
 

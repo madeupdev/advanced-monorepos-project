@@ -12,12 +12,22 @@ import {
 } from '../../tools/course-recovery/inputs.mjs';
 
 const validInputs = {
+  projectCommit: 'c'.repeat(40),
   courseVersion: '1.0.0',
   authoringCommit: 'a'.repeat(40),
   cliVersion: '0.1.0',
   cliTag: 'v0.1.0',
   cliSha256: 'b'.repeat(64),
 };
+
+test('requires a closed exact project commit input', () => {
+  const missingProjectCommit = { ...validInputs };
+  delete missingProjectCommit.projectCommit;
+  assert.throws(() => validateRehearsalInputs(missingProjectCommit), /projectCommit/);
+  assert.throws(() => validateRehearsalInputs({ ...validInputs, projectCommit: 'bad' }), /projectCommit/);
+  assert.throws(() => validateRehearsalInputs({ ...validInputs, projectCommit: 'A'.repeat(40) }), /projectCommit/);
+  assert.throws(() => validateRehearsalInputs({ ...validInputs, extra: 'no' }), /Unknown/);
+});
 
 test('derives the immutable CLI asset from validated version and fixed repository', () => {
   assert.deepEqual(validateRehearsalInputs(validInputs), {

@@ -14,6 +14,7 @@ export function createControlledEnvironment({
     HOME: home,
     XDG_CACHE_HOME: cache,
     NX_CACHE_DIRECTORY: `${cache}/nx`,
+    NX_PARALLEL: '1',
     PLAYWRIGHT_BROWSERS_PATH: `${cache}/ms-playwright`,
     CI: 'true',
     LANG: 'C.UTF-8',
@@ -26,7 +27,7 @@ export function createControlledEnvironment({
   );
 }
 
-function redact(value, sensitiveValues) {
+export function redactSensitiveValues(value, sensitiveValues) {
   let redacted = value;
   for (const sensitive of [...new Set(sensitiveValues)]
     .filter((item) => typeof item === 'string' && item.length > 0)
@@ -70,12 +71,12 @@ export function runTrustedCommand(
     child.stderr.on('data', retain);
     child.once('error', (error) => {
       reject(new Error(
-        `Could not execute ${command.executable}: ${redact(error.message, sensitiveValues)}`,
+        `Could not execute ${command.executable}: ${redactSensitiveValues(error.message, sensitiveValues)}`,
       ));
     });
     child.once('close', (exitCode, signal) => {
       if (exitCode === 0) {
-        resolve({ exitCode, diagnostics: redact(diagnostics, sensitiveValues) });
+        resolve({ exitCode, diagnostics: redactSensitiveValues(diagnostics, sensitiveValues) });
         return;
       }
       const status = signal === null
@@ -83,7 +84,7 @@ export function runTrustedCommand(
         : `signal ${String(signal)}`;
       const detail = diagnostics.trim() === ''
         ? ''
-        : `\n${redact(diagnostics.trim(), sensitiveValues)}`;
+        : `\n${redactSensitiveValues(diagnostics.trim(), sensitiveValues)}`;
       const suffix = truncated ? '\n[diagnostics truncated]' : '';
       reject(new Error(`Command ${command.executable} failed with ${status}${detail}${suffix}`));
     });

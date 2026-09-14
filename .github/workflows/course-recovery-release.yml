@@ -7,6 +7,10 @@ on:
         description: Exact course version (for example 1.0.0)
         required: true
         type: string
+      project_commit:
+        description: Exact 40-character canonical project commit SHA
+        required: true
+        type: string
       authoring_commit:
         description: Exact 40-character authoring commit SHA
         required: true
@@ -40,7 +44,7 @@ jobs:
       PGPASSWORD: ${{ secrets.RECOVERY_DATABASE_PASSWORD }}
     services:
       postgres:
-        image: postgres:17
+        image: postgres:17@sha256:7958605b474b3d264a969cb3a123d6aa00ad1e1fe9da8a69984dabb704d93317
         env:
           POSTGRES_DB: postgres
           POSTGRES_USER: course_recovery
@@ -63,6 +67,7 @@ jobs:
       - name: Validate exact dispatch inputs
         env:
           COURSE_VERSION: ${{ inputs.course_version }}
+          PROJECT_COMMIT: ${{ inputs.project_commit }}
           AUTHORING_COMMIT: ${{ inputs.authoring_commit }}
           CLI_VERSION: ${{ inputs.cli_version }}
           CLI_TAG: ${{ inputs.cli_tag }}
@@ -72,9 +77,10 @@ jobs:
             const semver = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
             const commit = /^[a-f0-9]{40}$/;
             const digest = /^[a-f0-9]{64}$/;
-            const { COURSE_VERSION: courseVersion, AUTHORING_COMMIT: authoringCommit,
+            const { COURSE_VERSION: courseVersion, PROJECT_COMMIT: projectCommit, AUTHORING_COMMIT: authoringCommit,
               CLI_VERSION: cliVersion, CLI_TAG: cliTag, CLI_SHA256: cliSha256 } = process.env;
             if (!semver.test(courseVersion ?? "")) throw new Error("Invalid exact course version");
+            if (!commit.test(projectCommit ?? "")) throw new Error("Invalid exact project commit");
             if (!commit.test(authoringCommit ?? "")) throw new Error("Invalid exact authoring commit");
             if (!semver.test(cliVersion ?? "")) throw new Error("Invalid exact CLI version");
             if (cliTag !== `v${cliVersion}`) throw new Error("CLI tag does not match CLI version");
@@ -82,6 +88,7 @@ jobs:
           '
           {
             echo "COURSE_VERSION=$COURSE_VERSION"
+            echo "PROJECT_COMMIT=$PROJECT_COMMIT"
             echo "AUTHORING_COMMIT=$AUTHORING_COMMIT"
             echo "CLI_VERSION=$CLI_VERSION"
             echo "CLI_TAG=$CLI_TAG"
@@ -95,6 +102,7 @@ jobs:
       - name: Check out canonical student project with full history
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.project_commit }}
           fetch-depth: 0
           path: project
           persist-credentials: false
@@ -102,6 +110,14 @@ jobs:
       - name: Fetch canonical student-project main
         working-directory: project
         run: git fetch --no-tags origin main:refs/remotes/origin/main
+
+      - name: Resolve project commit and prove canonical-main ancestry
+        working-directory: project
+        env:
+          PROJECT_COMMIT: ${{ inputs.project_commit }}
+        run: |
+          test "$(git rev-parse --verify 'HEAD^{commit}')" = "$PROJECT_COMMIT"
+          git merge-base --is-ancestor "$PROJECT_COMMIT" origin/main
 
       - name: Check out exact private authoring commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -172,6 +188,7 @@ jobs:
             --cli-builder "$CLI_INSTALL_DIRECTORY/node_modules/@madeup-video/course/dist/scripts/build-recovery-assets.js" \
             --output "$RECOVERY_BUNDLE" \
             --course-version "$COURSE_VERSION" \
+            --project-commit "$PROJECT_COMMIT" \
             --authoring-commit "$AUTHORING_COMMIT" \
             --cli-version "$CLI_VERSION" \
             --cli-tag "$CLI_TAG" \
@@ -195,6 +212,26 @@ jobs:
             ${{ runner.temp }}/course-recovery-bundle/S03-L02-start.tar.gz
             ${{ runner.temp }}/course-recovery-bundle/S03-L03-start.tar.gz
             ${{ runner.temp }}/course-recovery-bundle/S03-L04-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S04-L01-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S04-L02-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S04-L03-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S04-L04-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S04-final.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S05-L01-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S05-L02-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S05-L03-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S05-L04-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S05-L05-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S05-final.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S06-L01-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S06-L02-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S06-L03-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S06-L04-start.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S06-final.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S07-L01-focused-workflows.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S07-L02-task-dependencies.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S07-L03-config-boundaries.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S07-final.tar.gz
             ${{ runner.temp }}/course-recovery-bundle/manifest.json
             ${{ runner.temp }}/course-recovery-bundle/SHA256SUMS
 
