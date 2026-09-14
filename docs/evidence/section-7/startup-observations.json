@@ -1,0 +1,32 @@
+{
+  "observedAt": "2026-09-07",
+  "environment": {
+    "os": "macOS (Darwin arm64)",
+    "node": "24.18.0",
+    "pnpm": "11.17.0",
+    "nx": "23.1.1",
+    "postgresql": "PostgreSQL 17 container, independently managed and healthy",
+    "nxCloud": false,
+    "sampleCountPerProfile": 3
+  },
+  "readinessDefinition": {
+    "api": "HTTP success at /api/health with exact JSON {\"status\":\"ok\"}",
+    "storefront": "HTTP success at /",
+    "admin": "HTTP success at /",
+    "workflowReadyMs": "milliseconds from launcher start until every selected application is ready"
+  },
+  "samples": [
+    { "profile": "api", "sample": 1, "ports": { "api": 44210 }, "readinessMs": { "api": 5838 }, "workflowReadyMs": 5838, "interruptToExitMs": 2162, "exitCode": 130, "portsReusable": true },
+    { "profile": "api", "sample": 2, "ports": { "api": 44220 }, "readinessMs": { "api": 1758 }, "workflowReadyMs": 1758, "interruptToExitMs": 2156, "exitCode": 130, "portsReusable": true },
+    { "profile": "api", "sample": 3, "ports": { "api": 44230 }, "readinessMs": { "api": 1757 }, "workflowReadyMs": 1757, "interruptToExitMs": 2163, "exitCode": 130, "portsReusable": true },
+    { "profile": "storefront", "sample": 1, "ports": { "api": 44310, "storefront": 44311 }, "readinessMs": { "api": 2259, "storefront": 3354 }, "workflowReadyMs": 3354, "interruptToExitMs": 2218, "exitCode": 130, "portsReusable": true },
+    { "profile": "storefront", "sample": 2, "ports": { "api": 44320, "storefront": 44321 }, "readinessMs": { "api": 2008, "storefront": 3089 }, "workflowReadyMs": 3089, "interruptToExitMs": 2228, "exitCode": 130, "portsReusable": true },
+    { "profile": "storefront", "sample": 3, "ports": { "api": 44330, "storefront": 44331 }, "readinessMs": { "api": 1970, "storefront": 2717 }, "workflowReadyMs": 2717, "interruptToExitMs": 2222, "exitCode": 130, "portsReusable": true },
+    { "profile": "admin", "sample": 1, "ports": { "api": 44410, "admin": 44412 }, "readinessMs": { "api": 1497, "admin": 1210 }, "workflowReadyMs": 1497, "interruptToExitMs": 2165, "exitCode": 130, "portsReusable": true },
+    { "profile": "admin", "sample": 2, "ports": { "api": 44420, "admin": 44422 }, "readinessMs": { "api": 1586, "admin": 1011 }, "workflowReadyMs": 1586, "interruptToExitMs": 2173, "exitCode": 130, "portsReusable": true },
+    { "profile": "admin", "sample": 3, "ports": { "api": 44430, "admin": 44432 }, "readinessMs": { "api": 1600, "admin": 967 }, "workflowReadyMs": 1600, "interruptToExitMs": 2244, "exitCode": 130, "portsReusable": true },
+    { "profile": "full", "sample": 1, "ports": { "api": 44510, "storefront": 44511, "admin": 44512 }, "readinessMs": { "api": 2299, "storefront": 3394, "admin": 2005 }, "workflowReadyMs": 3394, "interruptToExitMs": 2213, "exitCode": 130, "portsReusable": true },
+    { "profile": "full", "sample": 2, "ports": { "api": 44520, "storefront": 44521, "admin": 44522 }, "readinessMs": { "api": 2322, "storefront": 3023, "admin": 1998 }, "workflowReadyMs": 3023, "interruptToExitMs": 2220, "exitCode": 130, "portsReusable": true },
+    { "profile": "full", "sample": 3, "ports": { "api": 44530, "storefront": 44531, "admin": 44532 }, "readinessMs": { "api": 2060, "storefront": 3154, "admin": 1704 }, "workflowReadyMs": 3154, "interruptToExitMs": 2226, "exitCode": 130, "portsReusable": true }
+  ]
+}
