@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
+import { rm, writeFile } from "node:fs/promises";
 import { test } from "node:test";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { resolveConfig } from "vite";
 
 import { readAdminDevelopmentConfig } from "../../apps/admin/config.ts";
 import { readAdminBrowserConfig } from "../../apps/admin/src/config.ts";
@@ -237,4 +240,46 @@ test("rejects disagreement between admin server and browser API origins", () => 
       }),
     /API_URL.*API_PORT/i,
   );
+});
+
+test("rejects incoherent root Vite env files before admin serve or build", async (t) => {
+  const adminDirectoryUrl = new URL("../../apps/admin/", import.meta.url);
+  const adminDirectory = fileURLToPath(adminDirectoryUrl);
+  const repositoryDirectoryUrl = new URL("../../", import.meta.url);
+  const mode = `configuration-mismatch-${process.pid}`;
+  const environmentFile = new URL(`.env.${mode}`, repositoryDirectoryUrl);
+  const configFile = fileURLToPath(new URL("vite.config.ts", adminDirectoryUrl));
+  const originalEnvironment = new Map();
+
+  for (const name of ["API_PORT", "ADMIN_PORT", "API_URL", "VITE_API_URL"]) {
+    originalEnvironment.set(name, process.env[name]);
+    delete process.env[name];
+  }
+
+  await writeFile(
+    environmentFile,
+    [
+      "API_PORT=3333",
+      "API_URL=http://127.0.0.1:3333",
+      "VITE_API_URL=http://127.0.0.1:4444",
+      "",
+    ].join("\n"),
+  );
+  t.after(async () => {
+    await rm(environmentFile, { force: true });
+    for (const [name, value] of originalEnvironment) {
+      if (value === undefined) {
+        delete process.env[name];
+      } else {
+        process.env[name] = value;
+      }
+    }
+  });
+
+  for (const command of ["serve", "build"]) {
+    await assert.rejects(
+      resolveConfig({ configFile, root: adminDirectory, mode, logLevel: "silent" }, command, mode),
+      /API_URL and VITE_API_URL must match/i,
+    );
+  }
 });
