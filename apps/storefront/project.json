@@ -15,7 +15,11 @@
         "default",
         "^default",
         "{workspaceRoot}/prisma/**/*",
-        "{workspaceRoot}/prisma.config.ts"
+        "{workspaceRoot}/prisma.config.ts",
+        { "env": "API_PORT" },
+        { "env": "STOREFRONT_PORT" },
+        { "env": "API_URL" },
+        { "env": "NEXT_PUBLIC_API_URL" }
       ],
       "outputs": [
         "{projectRoot}/.next/!(cache)",
@@ -34,17 +38,23 @@
     "dev": {
       "executor": "nx:run-commands",
       "continuous": true,
+      "dependsOn": [
+        {
+          "projects": ["@madeup-video/api"],
+          "target": "dev"
+        }
+      ],
       "options": {
-        "cwd": "apps/storefront",
-        "command": "pnpm exec next dev"
+        "cwd": ".",
+        "command": "node apps/storefront/scripts/next.mjs dev"
       }
     },
     "start": {
       "executor": "nx:run-commands",
       "continuous": true,
       "options": {
-        "cwd": "apps/storefront",
-        "command": "pnpm exec next start"
+        "cwd": ".",
+        "command": "node apps/storefront/scripts/next.mjs start"
       }
     },
     "lint": {

@@ -228,6 +228,10 @@ jobs:
             ${{ runner.temp }}/course-recovery-bundle/S06-L03-start.tar.gz
             ${{ runner.temp }}/course-recovery-bundle/S06-L04-start.tar.gz
             ${{ runner.temp }}/course-recovery-bundle/S06-final.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S07-L01-focused-workflows.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S07-L02-task-dependencies.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S07-L03-config-boundaries.tar.gz
+            ${{ runner.temp }}/course-recovery-bundle/S07-final.tar.gz
             ${{ runner.temp }}/course-recovery-bundle/manifest.json
             ${{ runner.temp }}/course-recovery-bundle/SHA256SUMS
 

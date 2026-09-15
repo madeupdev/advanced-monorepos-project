@@ -6,9 +6,14 @@ const workflowPath = new URL(
   '../../.github/workflows/course-recovery-release.yml',
   import.meta.url,
 );
+const ciWorkflowPath = new URL('../../.github/workflows/ci.yml', import.meta.url);
 
 async function workflow() {
   return readFile(workflowPath, 'utf8');
+}
+
+async function ciWorkflow() {
+  return readFile(ciWorkflowPath, 'utf8');
 }
 
 const expectedUploadPaths = [
@@ -39,6 +44,10 @@ const expectedUploadPaths = [
   'S06-L03-start.tar.gz',
   'S06-L04-start.tar.gz',
   'S06-final.tar.gz',
+  'S07-L01-focused-workflows.tar.gz',
+  'S07-L02-task-dependencies.tar.gz',
+  'S07-L03-config-boundaries.tar.gz',
+  'S07-final.tar.gz',
   'manifest.json',
   'SHA256SUMS',
 ].map((name) => `\${{ runner.temp }}/course-recovery-bundle/${name}`);
@@ -88,8 +97,8 @@ test('pins the exact project checkout, runtime, PostgreSQL image, and complete u
 
   const paths = uploadPaths(source);
   assert.deepEqual(paths, expectedUploadPaths);
-  assert.equal(new Set(paths).size, 29);
-  assert.equal(paths.filter((path) => path.endsWith('.tar.gz')).length, 27);
+  assert.equal(new Set(paths).size, 33);
+  assert.equal(paths.filter((path) => path.endsWith('.tar.gz')).length, 31);
   assert.deepEqual(paths.slice(-2), [
     '${{ runner.temp }}/course-recovery-bundle/manifest.json',
     '${{ runner.temp }}/course-recovery-bundle/SHA256SUMS',
@@ -197,6 +206,10 @@ test('uploads one short-lived fixed-name artifact using only the explicit bundle
     'S05-L04-start.tar.gz',
     'S05-L05-start.tar.gz',
     'S05-final.tar.gz',
+    'S07-L01-focused-workflows.tar.gz',
+    'S07-L02-task-dependencies.tar.gz',
+    'S07-L03-config-boundaries.tar.gz',
+    'S07-final.tar.gz',
     'manifest.json',
     'SHA256SUMS',
   ]) {
@@ -206,6 +219,14 @@ test('uploads one short-lived fixed-name artifact using only the explicit bundle
   assert.doesNotMatch(
     uploadStep.split(/\n\s+- name:/, 1)[0],
     /authoring|delivery-states|node_modules|\.env|\.log|database|dump/i,
+  );
+});
+
+test('runs the portable local-development tests explicitly in Linux CI', async () => {
+  const source = await ciWorkflow();
+  assert.match(
+    source,
+    /name: Portable local-development tests\s+run: node --test tests\/tooling\/local-development\.test\.mjs/,
   );
 });
 

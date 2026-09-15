@@ -5,7 +5,9 @@ try {
   console.log(
     "Local setup is complete. PostgreSQL is healthy, both databases exist, migrations are applied, and development fixtures are seeded.",
   );
-  console.log('Run "pnpm dev" to start the storefront.');
+  console.log(
+    'Run "pnpm dev" to start the API, storefront, and admin applications.',
+  );
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;

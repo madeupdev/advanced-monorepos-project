@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { readStorefrontBrowserConfig } from "../lib/config/browser";
 import styles from "./rental-actions.module.css";
 
 type ReturnButtonProps = {
@@ -15,8 +16,7 @@ type ErrorPayload = {
   };
 };
 
-const browserApiOrigin =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:3333";
+const { apiOrigin: browserApiOrigin } = readStorefrontBrowserConfig();
 
 export function ReturnButton({ rentalId, titleName }: ReturnButtonProps) {
   const router = useRouter();

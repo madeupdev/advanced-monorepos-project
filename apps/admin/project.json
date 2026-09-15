@@ -8,7 +8,14 @@
     "build": {
       "executor": "nx:run-commands",
       "outputs": ["{workspaceRoot}/dist/apps/admin"],
-      "inputs": ["default", "^default", { "env": "VITE_API_URL" }],
+      "inputs": [
+        "default",
+        "^default",
+        { "env": "API_PORT" },
+        { "env": "ADMIN_PORT" },
+        { "env": "API_URL" },
+        { "env": "VITE_API_URL" }
+      ],
       "options": {
         "cwd": "apps/admin",
         "command": "pnpm exec vite build"
@@ -17,6 +24,12 @@
     "dev": {
       "continuous": true,
       "executor": "nx:run-commands",
+      "dependsOn": [
+        {
+          "projects": ["@madeup-video/api"],
+          "target": "dev"
+        }
+      ],
       "options": {
         "cwd": "apps/admin",
         "command": "pnpm exec vite"

@@ -6,6 +6,7 @@ const storefrontOrigin = "http://127.0.0.1:3100";
 const serverEnvironment = {
   API_URL: apiOrigin,
   NEXT_PUBLIC_API_URL: apiOrigin,
+  STOREFRONT_PORT: "3100",
   STOREFRONT_URL: storefrontOrigin,
   DATABASE_URL: testDatabaseUrl,
   TEST_DATABASE_URL: testDatabaseUrl,

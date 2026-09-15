@@ -66,6 +66,9 @@ jobs:
       - name: Type-check
         run: pnpm typecheck
 
+      - name: Portable local-development tests
+        run: node --test tests/tooling/local-development.test.mjs
+
       - name: Local environment tooling tests
         run: pnpm test:tooling
 

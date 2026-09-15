@@ -4,8 +4,9 @@ import {
   type RentalSummary,
   type TitleSummary,
 } from '@madeup-video/contracts';
+import { readAdminBrowserConfig } from '../config';
 
-const apiOrigin = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:3333';
+const { apiOrigin } = readAdminBrowserConfig();
 
 async function get(path: string): Promise<unknown> {
   const response = await fetch(`${apiOrigin}/api${path}`);
