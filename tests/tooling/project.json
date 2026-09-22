@@ -1,0 +1,18 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@madeup-video/repository-tooling",
+  "projectType": "library",
+  "sourceRoot": "tests/tooling",
+  "implicitDependencies": ["*"],
+  "tags": ["type:tooling", "runtime:server", "scope:workspace"],
+  "targets": {
+    "test:tooling": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": ".",
+        "command": "node --test tests/tooling/**/*.test.mjs"
+      }
+    }
+  }
+}

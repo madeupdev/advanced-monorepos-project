@@ -119,6 +119,35 @@ export default defineConfig([
     },
   },
   {
+    files: ["tests/tooling/**/*.test.mjs"],
+    rules: {
+      "@nx/enforce-module-boundaries": [
+        "error",
+        {
+          ...boundaryOptions,
+          allow: [
+            "../../apps/admin/config.ts",
+            "../../apps/admin/src/config.ts",
+            "../../apps/api/src/app/config.ts",
+            "../../apps/storefront/lib/config/browser.ts",
+            "../../apps/storefront/lib/config/server.ts",
+            "../../apps/storefront/scripts/next.mjs",
+            "../../scripts/lib/browser-bundle-leakage.mjs",
+            "../../scripts/lib/local-development.mjs",
+            "../../scripts/lib/local-environment.mjs",
+            "../../tools/course-recovery/archive.mjs",
+            "../../tools/course-recovery/bundle.mjs",
+            "../../tools/course-recovery/inputs.mjs",
+            "../../tools/course-recovery/postgres.mjs",
+            "../../tools/course-recovery/process.mjs",
+            "../../tools/course-recovery/rehearse.mjs",
+            "../fixtures/course-recovery/tar.mjs",
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: [
       "apps/storefront/playwright.config.ts",
       "apps/admin-e2e/playwright.config.ts",

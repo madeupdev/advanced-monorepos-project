@@ -1,5 +1,24 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "namedInputs": {
+    "sharedGlobals": [
+      "{workspaceRoot}/nx.json",
+      "{workspaceRoot}/package.json",
+      "{workspaceRoot}/pnpm-lock.yaml",
+      "{workspaceRoot}/tsconfig.base.json"
+    ],
+    "default": [
+      "{projectRoot}/**/*",
+      "sharedGlobals"
+    ],
+    "unitTestSources": [
+      "default",
+      "{workspaceRoot}/tests/unit/**/*",
+      "{workspaceRoot}/vitest.config.ts",
+      { "runtime": "node --version" },
+      { "runtime": "pnpm --version" }
+    ]
+  },
   "targetDefaults": {
     "build": {
       "cache": true,
@@ -23,7 +42,8 @@
     {
       "plugin": "@nx/playwright/plugin",
       "options": {
-        "targetName": "e2e"
+        "targetName": "e2e",
+        "ciTargetName": ""
       }
     },
     {

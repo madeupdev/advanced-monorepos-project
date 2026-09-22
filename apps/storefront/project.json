@@ -78,17 +78,14 @@
     },
     "test:unit": {
       "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "unitTestSources",
+        "^unitTestSources"
+      ],
       "options": {
         "cwd": ".",
         "command": "pnpm exec vitest run --project unit"
-      }
-    },
-    "test:tooling": {
-      "executor": "nx:run-commands",
-      "cache": false,
-      "options": {
-        "cwd": ".",
-        "command": "node --test tests/tooling/**/*.test.mjs"
       }
     },
     "test:integration": {

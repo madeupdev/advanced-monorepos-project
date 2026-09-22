@@ -1,8 +1,9 @@
 # Workspace boundaries
 
 The storefront and API are explicit applications under `apps/storefront` and
-`apps/api`; the root package retains repository-wide tooling and database
-ownership. Workspace projects exist only when they carry an ownership,
+`apps/api`; the root package retains database ownership, while
+`@madeup-video/repository-tooling` owns repository-wide validation and tooling.
+Workspace projects exist only when they carry an ownership,
 runtime, dependency, public-contract, or useful task boundary.
 
 | Project | Responsibility | Why it is a project |
@@ -15,17 +16,20 @@ runtime, dependency, public-contract, or useful task boundary.
 | database | Prisma access and persistence operations | Server-only runtime boundary |
 | ui | Modest reusable visual primitives | Shared visual ownership boundary |
 | testing | Reusable fixtures and test support | Test-only dependency boundary |
+| repository-tooling | Repository-wide architecture, lifecycle, configuration, and recovery checks | Workspace-level validation boundary |
 
-This is the complete approved library set. A candidate must add a meaningful
+The five entries from `contracts` through `testing` are the complete approved
+public library set. Repository tooling is an internal workspace project, not a
+library that application code may consume. A candidate must add a meaningful
 boundary, not merely provide another folder name.
 
 ## Tag dimensions
 
 Every project will be classified independently by:
 
-- purpose: application, contract, domain, data access, UI, or testing;
+- purpose: application, contract, domain, data access, UI, testing, or tooling;
 - runtime: browser, server, or universal; and
-- scope: storefront, rental, or shared.
+- scope: storefront, rental, shared, or workspace.
 
 These names are conventions for this workspace. They are not universal Nx
 standards. Their value comes from the dependency decisions they encode.
