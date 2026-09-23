@@ -18,7 +18,7 @@
     "test": "pnpm test:all",
     "test:all": "pnpm test:tooling && pnpm test:unit && pnpm test:integration && pnpm test:api && pnpm test:e2e",
     "test:recovery": "node --test tests/tooling/course-recovery-*.test.mjs",
-    "test:tooling": "node --test tests/tooling/**/*.test.mjs",
+    "test:tooling": "node --test --test-concurrency=1 tests/tooling/**/*.test.mjs",
     "rehearse:course-recovery": "node tools/course-recovery/rehearse.mjs",
     "test:unit": "nx run @madeup-video/storefront:test:unit",
     "test:integration": "nx run @madeup-video/storefront:test:integration",

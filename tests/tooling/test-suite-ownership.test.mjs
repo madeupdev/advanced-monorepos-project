@@ -65,11 +65,12 @@ test("does not infer cacheable Playwright CI targets", async () => {
   assert.equal(Object.keys(project.targets).some((name) => name.startsWith("e2e-ci")), false);
 });
 
-test("gives repository tooling its own uncached Nx target", async () => {
-  const [storefront, testing, tooling] = await Promise.all([
+test("runs mutation-sensitive repository tooling serially and without cache", async () => {
+  const [storefront, testing, tooling, packageJson] = await Promise.all([
     readProject("../../apps/storefront/project.json"),
     readProject("../../libs/testing/project.json"),
     readProject("./project.json"),
+    readProject("../../package.json"),
   ]);
 
   assert.equal("test:tooling" in storefront.targets, false);
@@ -79,8 +80,12 @@ test("gives repository tooling its own uncached Nx target", async () => {
   assert.deepEqual(tooling.implicitDependencies, ["*"]);
   assert.equal(tooling.targets["test:tooling"].cache, false);
   assert.equal(
+    packageJson.scripts["test:tooling"],
+    "node --test --test-concurrency=1 tests/tooling/**/*.test.mjs",
+  );
+  assert.equal(
     tooling.targets["test:tooling"].options.command,
-    "node --test tests/tooling/**/*.test.mjs",
+    "node --test --test-concurrency=1 tests/tooling/**/*.test.mjs",
   );
   assert.equal("outputs" in tooling.targets["test:tooling"], false);
 });

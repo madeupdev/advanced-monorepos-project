@@ -11,7 +11,20 @@
       "cache": false,
       "options": {
         "cwd": ".",
-        "command": "node --test tests/tooling/**/*.test.mjs"
+        "command": "node --test --test-concurrency=1 tests/tooling/**/*.test.mjs"
+      }
+    },
+    "test:cache-input": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/cache-fixture/**/*",
+        "{workspaceRoot}/tests/cache-fixture-input.txt"
+      ],
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "cwd": ".",
+        "command": "node tests/tooling/cache-fixture/run.mjs"
       }
     }
   }
