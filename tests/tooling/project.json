@@ -26,6 +26,22 @@
         "cwd": ".",
         "command": "node tests/tooling/cache-fixture/run.mjs"
       }
+    },
+    "measure:parallel-one": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": ".",
+        "command": "node tests/tooling/parallelism-fixture/run.mjs one"
+      }
+    },
+    "measure:parallel-two": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": ".",
+        "command": "node tests/tooling/parallelism-fixture/run.mjs two"
+      }
     }
   }
 }
