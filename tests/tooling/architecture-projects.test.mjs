@@ -79,9 +79,10 @@ const courseTags = new Map([
   ['@madeup-video/database', ['runtime:server', 'scope:rental', 'type:data-access']],
   ['@madeup-video/ui', ['runtime:browser', 'scope:shared', 'type:ui']],
   ['@madeup-video/testing', ['runtime:server', 'scope:shared', 'type:test']],
+  ['@madeup-video/repository-tooling', ['runtime:server', 'scope:workspace', 'type:tooling']],
 ]);
 
-test('models the storefront, API, admin projects, and five approved libraries', async () => {
+test('models the applications, five public libraries, and repository tooling project', async () => {
   const { stdout } = await exec('pnpm', ['exec', 'nx', 'show', 'projects', '--json'], {
     cwd: root,
     encoding: 'utf8',
@@ -95,6 +96,7 @@ test('models the storefront, API, admin projects, and five approved libraries', 
     '@madeup-video/contracts',
     '@madeup-video/database',
     '@madeup-video/rental-domain',
+    '@madeup-video/repository-tooling',
     '@madeup-video/storefront',
     '@madeup-video/testing',
     '@madeup-video/ui',

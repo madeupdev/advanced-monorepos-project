@@ -1,0 +1,47 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@madeup-video/repository-tooling",
+  "projectType": "library",
+  "sourceRoot": "tests/tooling",
+  "implicitDependencies": ["*"],
+  "tags": ["type:tooling", "runtime:server", "scope:workspace"],
+  "targets": {
+    "test:tooling": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": ".",
+        "command": "node --test --test-concurrency=1 tests/tooling/**/*.test.mjs"
+      }
+    },
+    "test:cache-input": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/cache-fixture/**/*",
+        "{workspaceRoot}/tests/cache-fixture-input.txt"
+      ],
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "cwd": ".",
+        "command": "node tests/tooling/cache-fixture/run.mjs"
+      }
+    },
+    "measure:parallel-one": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": ".",
+        "command": "node tests/tooling/parallelism-fixture/run.mjs one"
+      }
+    },
+    "measure:parallel-two": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": ".",
+        "command": "node tests/tooling/parallelism-fixture/run.mjs two"
+      }
+    }
+  }
+}

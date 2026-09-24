@@ -82,6 +82,28 @@ test('rejects a cross-project relative import that bypasses the public entry poi
   );
 });
 
+test('allows tooling tests to inspect an application module', async () => {
+  const messages = await boundaryMessages(
+    "export { readApiConfig } from '../../apps/api/src/app/config.ts';\n",
+    'tests/tooling/architecture-boundaries.test.mjs',
+  );
+
+  assert.deepEqual(messages, []);
+});
+
+test('rejects an unlisted deep application import from tooling tests', async () => {
+  const messages = await boundaryMessages(
+    "export { default } from '../../apps/storefront/app/page.tsx';\n",
+    'tests/tooling/architecture-boundaries.test.mjs',
+  );
+
+  assert.equal(messages.length > 0, true);
+  assert.match(
+    messages.map(({ message }) => message).join('\n'),
+    /relative or absolute path|npm scope|entry point/i,
+  );
+});
+
 test('keeps server configuration imports separate from browser configuration', async () => {
   const [serverConfig, serverApi, apiConfig] = await Promise.all([
     readFile(new URL('../../apps/storefront/lib/config/server.ts', import.meta.url), 'utf8'),
