@@ -156,3 +156,13 @@ test('known environment secrets are rejected before the public nonce exception',
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('credential-bearing PR diff metadata remains unsafe to retain', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 's09-git-diff-secret-'));
+  try {
+    const file = join(dir, 'report.json');
+    await writeFile(file, JSON.stringify({ metadata: { gitDiff: '+DATABASE_URL=postgresql://user:password@host/db' } }));
+    const { auditArtifacts } = await import(moduleUrl);
+    await assert.rejects(auditArtifacts([file]), /Sensitive/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
