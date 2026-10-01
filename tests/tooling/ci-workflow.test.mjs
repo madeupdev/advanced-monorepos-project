@@ -22,3 +22,11 @@ test('both browser suites retain failure traces and screenshots without overwrit
   assert.match(admin,/test-results\/admin/);
   assert.match(admin,/playwright-report\/admin/);
 });
+
+test('runner paths are initialized on the runner and PR head does not override reserved GitHub variables', async () => {
+  const source = await readFile(new URL('../../.github/workflows/ci.yml',import.meta.url),'utf8');
+  const jobEnvironment = source.split('    env:')[1].split('    services:')[0];
+  assert.doesNotMatch(jobEnvironment,/\$\{\{\s*runner\./);
+  assert.match(source,/NX_CACHE_DIRECTORY=\$RUNNER_TEMP/);
+  assert.match(source,/CI_EVENT_HEAD: \$\{\{ github.event.pull_request.head.sha/);
+});
