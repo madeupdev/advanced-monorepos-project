@@ -13,3 +13,5 @@ async function bootstrap() {
 }
 
 void bootstrap();
+
+// Section 9 hosted api selection evidence.
