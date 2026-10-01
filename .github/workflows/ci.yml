@@ -20,8 +20,6 @@ jobs:
       NX_DAEMON: 'false'
       NX_NO_CLOUD: 'true'
       NX_PREFER_NODE_STRIP_TYPES: 'false'
-      NX_CACHE_DIRECTORY: ${{ runner.temp }}/nx-cache
-      NX_WORKSPACE_DATA_DIRECTORY: ${{ runner.temp }}/nx-workspace
     services:
       postgres:
         image: postgres:17
@@ -52,6 +50,11 @@ jobs:
           node-version: 24.18.0
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
+      - name: Isolate runner task state
+        shell: bash
+        run: |
+          echo "NX_CACHE_DIRECTORY=$RUNNER_TEMP/nx-cache" >> "$GITHUB_ENV"
+          echo "NX_WORKSPACE_DATA_DIRECTORY=$RUNNER_TEMP/nx-workspace" >> "$GITHUB_ENV"
       - name: Install dependencies
         run: corepack pnpm install --frozen-lockfile
       - name: Find last successful default-branch validation
@@ -73,7 +76,7 @@ jobs:
       - name: Calculate comparison range
         id: range
         env:
-          GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          CI_EVENT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
           LAST_SUCCESSFUL_SHA: ${{ steps.success.outputs.sha }}
         run: node scripts/ci-base.mjs
       - name: Create test database
