@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
+import { promisify } from 'node:util';
 import test from 'node:test';
 test('CI uses explicit head/full history and preserves all prerequisite boundaries', async () => {
   const source = await readFile(new URL('../../.github/workflows/ci.yml',import.meta.url),'utf8');
@@ -29,4 +31,14 @@ test('runner paths are initialized on the runner and PR head does not override r
   assert.doesNotMatch(jobEnvironment,/\$\{\{\s*runner\./);
   assert.match(source,/NX_CACHE_DIRECTORY=\$RUNNER_TEMP/);
   assert.match(source,/CI_EVENT_HEAD: \$\{\{ github.event.pull_request.head.sha/);
+});
+
+test('both browser reports retain commit links and disable credential-bearing PR diffs', async () => {
+  const configUrls = ['admin-e2e', 'storefront'].map(app => new URL(`../../apps/${app}/playwright.config.ts`, import.meta.url).href);
+  const { stdout } = await promisify(execFile)(process.execPath, [
+    '--import', 'tsx', '--input-type=module', '-e',
+    'const configs = await Promise.all(process.argv.slice(1).map(url => import(url))); console.log(JSON.stringify(configs.map(config => config.default.captureGitInfo)));',
+    ...configUrls,
+  ], { env: { ...process.env, TEST_DATABASE_URL: 'postgresql://ci:ci@127.0.0.1/ci_report_metadata_test' } });
+  assert.deepEqual(JSON.parse(stdout), [{ commit: true, diff: false }, { commit: true, diff: false }]);
 });
