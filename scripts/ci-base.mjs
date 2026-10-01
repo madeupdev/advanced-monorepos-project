@@ -96,7 +96,7 @@ function runCli() {
     const result = selectRange({
       eventName: process.env.GITHUB_EVENT_NAME,
       event,
-      head: process.env.GITHUB_SHA,
+      head: process.env.CI_EVENT_HEAD || process.env.GITHUB_SHA,
       lastSuccessfulSha: process.env.LAST_SUCCESSFUL_SHA,
       cwd: process.cwd(),
     });
