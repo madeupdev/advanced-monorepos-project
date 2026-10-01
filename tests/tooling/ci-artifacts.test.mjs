@@ -80,3 +80,79 @@ test('HTML embedded Playwright ZIP data is audited after decoding', async () => 
     await assert.rejects(auditArtifacts([html]),/Sensitive/);
   } finally {await rm(dir,{recursive:true,force:true});}
 });
+
+test('accepts reporter JavaScript and source snippets inside structured evidence', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 's09-code-evidence-'));
+  try {
+    const code = 'function unzip({password=e}={}) { return {password:decode(e)}; } const config={password:!0};';
+    await writeFile(join(dir, 'reporter.js'), code);
+    await writeFile(join(dir, 'report.json'), JSON.stringify({ snippet: code }));
+    await writeFile(join(dir, 'reporter.css'), '.codicon-gist-secret:before{content:"icon"}');
+    const { auditArtifacts } = await import(moduleUrl);
+    assert.equal((await auditArtifacts([dir])).files, 3);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('accepts the loopback Vite WebSocket nonce but rejects remote and HTTP token URLs', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 's09-network-evidence-'));
+  try {
+    const file = join(dir, '0-trace.network');
+    const { auditArtifacts } = await import(moduleUrl);
+    await writeFile(file, JSON.stringify({ request: { url: 'ws://127.0.0.1:3219/?token=IP47C2sYh2Aj', cookies: [], headers: [{ name: 'Sec-WebSocket-Protocol', value: 'vite-hmr' }], queryString: [{ name: 'token', value: 'IP47C2sYh2Aj' }] } }));
+    assert.equal((await auditArtifacts([file])).files, 1);
+    await writeFile(file, JSON.stringify({ request: { url: 'ws://127.0.0.1:3219/?token=IP47C2sYh2Aj', headers: [{ name: 'Sec-WebSocket-Protocol', value: 'vite-hmr' }], queryString: [{ name: 'token', value: 'different-private-value' }] } }));
+    await assert.rejects(auditArtifacts([file]), /Sensitive/);
+    for (const url of ['wss://remote.example/?token=private-value', 'https://127.0.0.1/?token=private-value', 'ws://127.0.0.1/private?token=private-value', 'ws://127.0.0.1/?token=IP47C2sYh2Aj']) {
+      await writeFile(file, JSON.stringify({ request: { url } }));
+      await assert.rejects(auditArtifacts([file]), /Sensitive/);
+    }
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('rejects trace authentication headers and cookies', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 's09-auth-evidence-'));
+  try {
+    const file = join(dir, '0-trace.network');
+    const { auditArtifacts } = await import(moduleUrl);
+    for (const request of [
+      { headers: [{ name: 'Authorization', value: 'Bearer private-value' }] },
+      { headers: [{ name: 'Cookie', value: 'session=private-value' }] },
+      { cookies: [{ name: 'session', value: 'private-value' }] },
+    ]) {
+      await writeFile(file, JSON.stringify({ request }));
+      await assert.rejects(auditArtifacts([file]), /Sensitive/);
+    }
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('rejects literal credentials and known secrets inside JSON source snippets', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 's09-source-secret-'));
+  const previous = process.env.PGPASSWORD;
+  process.env.PGPASSWORD = 'known-private-diagnostic-value';
+  try {
+    const file = join(dir, 'report.json');
+    const { auditArtifacts } = await import(moduleUrl);
+    for (const snippet of ['const token="private-value";', 'const DATABASE_URL="postgresql://user:password@host/db";', 'known-private-diagnostic-value']) {
+      await writeFile(file, JSON.stringify({ snippet }));
+      await assert.rejects(auditArtifacts([file]), /Sensitive/);
+    }
+  } finally {
+    if (previous === undefined) delete process.env.PGPASSWORD; else process.env.PGPASSWORD = previous;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('known environment secrets are rejected before the public nonce exception', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 's09-known-nonce-'));
+  const previous = process.env.PGPASSWORD;
+  process.env.PGPASSWORD = 'IP47C2sYh2Aj';
+  try {
+    const file = join(dir, '0-trace.network');
+    await writeFile(file, JSON.stringify({ request: { url: 'ws://127.0.0.1:3219/?token=IP47C2sYh2Aj', headers: [{ name: 'Sec-WebSocket-Protocol', value: 'vite-hmr' }] } }));
+    const { auditArtifacts } = await import(moduleUrl);
+    await assert.rejects(auditArtifacts([file]), /Sensitive/);
+  } finally {
+    if (previous === undefined) delete process.env.PGPASSWORD; else process.env.PGPASSWORD = previous;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
