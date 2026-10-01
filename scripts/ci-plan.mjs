@@ -1,5 +1,5 @@
 import { execFile, spawn } from 'node:child_process';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
@@ -214,7 +214,7 @@ async function runTarget(target, cwd) {
   const command = target === 'lint' ? 'pnpm' : process.execPath;
   const args = target === 'lint' ? ['lint'] : [nxBin, 'run', target, '--output-style=static'];
   await new Promise((resolve, reject) => {
-    const child = spawn(command, args, { cwd, env: process.env, stdio: 'inherit' });
+    const child = spawn(command, args, { cwd, env: { ...process.env, NX_DAEMON: 'false', NX_NO_CLOUD: 'true', NX_PREFER_NODE_STRIP_TYPES: 'false', NODE_PATH: [path.join(cwd, 'node_modules/nx/node_modules'), path.join(cwd, 'node_modules'), path.join(cwd, 'node_modules/.pnpm/node_modules'), process.env.NODE_PATH].filter(Boolean).join(path.delimiter) }, stdio: 'inherit' });
     child.on('error', reject);
     child.on('close', code => code === 0 ? resolve() : reject(new Error(`Validation failed: ${target} (exit ${code})`)));
   });
@@ -228,8 +228,19 @@ async function cli(argv) {
   if (argv.includes('--run')) {
     if (planIndex < 0 || !argv[planIndex + 1]) fail('--run requires --plan <json>');
     const plan = readPlan(await readFile(argv[planIndex + 1], 'utf8'));
-    await runTarget('lint', process.cwd());
-    for (const target of plan.tasks) await runTarget(target, process.cwd());
+    await mkdir('ci-results', { recursive: true });
+    const results = [];
+    for (const target of ['lint', ...plan.tasks]) {
+      const start = performance.now();
+      let failure;
+      console.log(`CI task start: ${target}`);
+      try { await runTarget(target, process.cwd()); } catch (error) { failure = error; }
+      const result = { target, durationMs: Math.round(performance.now() - start), status: failure ? 'failed' : 'passed' };
+      results.push(result);
+      await writeFile('ci-results/execution.json', `${JSON.stringify({ requestedCount: plan.count, executedCount: results.length, results }, null, 2)}\n`);
+      console.log(`CI task finish: ${JSON.stringify(result)}`);
+      if (failure) throw failure;
+    }
     return;
   }
   const files = filesIndex >= 0 ? parseFilesArgument(argv[filesIndex + 1]) : undefined;
@@ -241,7 +252,7 @@ async function cli(argv) {
   } else {
     const base = process.env.CI_BASE;
     const head = process.env.CI_HEAD;
-    if (!base || !head) fail('No --files provided; CI_BASE and CI_HEAD are required');
+    if (!/^[a-f0-9]{40}$/.test(base ?? '') || !/^[a-f0-9]{40}$/.test(head ?? '')) fail('CI_BASE and CI_HEAD must be verified full commit SHAs');
     const result = await execFileAsync('git', ['diff', '--name-only', '-z', base, head], { cwd: process.cwd(), maxBuffer: 20 * 1024 * 1024 });
     const changed = result.stdout.split('\0').filter(Boolean);
     plan = await createPlan({ files: changed, base, head, full: false });

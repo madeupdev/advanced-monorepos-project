@@ -11,3 +11,6 @@ test-results/
 .env.local
 .env.test
 .nx/
+
+ci-plan.json
+ci-results/

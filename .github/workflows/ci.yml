@@ -91,4 +91,32 @@ jobs:
           CI_FULL: ${{ steps.range.outputs.full }}
         run: node scripts/ci-plan.mjs --output ci-plan.json
       - name: Execute required validation
-        run: node scripts/ci-plan.mjs --run --plan ci-plan.json
+        shell: bash
+        run: |
+          mkdir -p ci-results
+          set -o pipefail
+          node scripts/ci-plan.mjs --run --plan ci-plan.json 2>&1 | tee ci-results/validation.log
+      - name: Audit retained diagnostics
+        id: audit
+        if: always()
+        run: node scripts/ci-artifacts.mjs ci-plan.json ci-results test-results playwright-report
+      - name: Retain validation plan and reports
+        if: always() && steps.audit.outcome == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-diagnostics-${{ github.run_id }}
+          path: |
+            ci-plan.json
+            ci-results/
+          if-no-files-found: ignore
+          retention-days: 5
+      - name: Retain browser failure evidence
+        if: failure() && steps.audit.outcome == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-failure-evidence-${{ github.run_id }}
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+          retention-days: 5

@@ -27,8 +27,13 @@ export default defineConfig({
   fullyParallel: false,
   retries: 0,
   workers: 1,
+  reporter: [['line'], ['html', { outputFolder: '../../playwright-report/admin', open: 'never' }]],
+  outputDir: '../../test-results/admin',
   use: {
     baseURL: adminOrigin,
+    screenshot: 'only-on-failure',
+    trace: 'retain-on-failure',
+    video: 'off',
     ...devices['Desktop Chrome'],
   },
   webServer: [
