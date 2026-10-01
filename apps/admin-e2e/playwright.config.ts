@@ -23,6 +23,7 @@ const serverEnvironment = {
 };
 
 export default defineConfig({
+  captureGitInfo: { commit: true, diff: false },
   testDir: './src',
   fullyParallel: false,
   retries: 0,
