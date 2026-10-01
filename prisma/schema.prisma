@@ -47,3 +47,5 @@ model Rental {
 
   @@index([returnedAt])
 }
+
+// Section 9 hosted schema selection evidence.
