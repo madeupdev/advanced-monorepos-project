@@ -75,3 +75,5 @@ export type TitleResponse = z.infer<typeof titleResponseSchema>;
 export type RentalsResponse = z.infer<typeof rentalsResponseSchema>;
 export type RentalResponse = z.infer<typeof rentalResponseSchema>;
 export type ErrorResponse = z.infer<typeof errorResponseSchema>;
+
+// Section 9 hosted contracts selection evidence.
