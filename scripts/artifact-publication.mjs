@@ -11,6 +11,14 @@ export function authorizeEvent(event,source) {
  if(!['workflow_dispatch','push'].includes(event?.name)||event.repository!==repository||!/^refs\/heads\/(main|codex\/section-10[-/a-z0-9]*)$/.test(event.ref??'')||event.sha!==source||event.mode!=='dry-run')throw new Error('Unauthorized artifact event; only same-repository approved-branch dispatch dry-run is supported');
  return true;
 }
+function validBuildTime(value) {
+ if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(value??''))return false;
+ const timestamp=Date.parse(value);
+ return Number.isFinite(timestamp)&&new Date(timestamp).toISOString()===(value.includes('.')?value:value.replace('Z','.000Z'));
+}
+export async function verifyNoLocalCredentials(artifacts,docker) {
+ for(const artifact of artifacts)await docker('run','--rm','--label','course.task=section10','--network','none','--entrypoint','sh',artifact.imageId,'-c','test ! -e /app/.env && test ! -e /app/.git && test ! -e /usr/share/nginx/html/.env');
+}
 export function publicationPlan({manifest,selection,event}) {
  const source=manifest?.sourceCommit;if(!/^[a-f0-9]{40}$/.test(source??''))throw new Error('Invalid source metadata');
  authorizeEvent(event,source);
@@ -19,7 +27,7 @@ export function publicationPlan({manifest,selection,event}) {
  for(const a of manifest.artifacts) {
   if(!names.includes(a.name))throw new Error('Unknown artifact');
   if(found.has(a.name))throw new Error('Duplicate artifact');
-  if(a.sourceCommit!==source||a.source!==`https://github.com/${repository}`||a.toolchain!=='node24.18.0-pnpm11.17.0'||!/^sha256:[a-f0-9]{64}$/.test(a.imageId??'')||!/^[a-f0-9]{64}$/.test(a.archiveSha256??'')||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(a.buildTime??'')||!Number.isFinite(Date.parse(a.buildTime))||a.status!=='staged')throw new Error(`Invalid metadata or inconsistent provenance: ${a.name}`);
+  if(a.sourceCommit!==source||a.source!==`https://github.com/${repository}`||a.toolchain!=='node24.18.0-pnpm11.17.0'||!/^sha256:[a-f0-9]{64}$/.test(a.imageId??'')||!/^[a-f0-9]{64}$/.test(a.archiveSha256??'')||!validBuildTime(a.buildTime)||a.status!=='staged')throw new Error(`Invalid metadata or inconsistent provenance: ${a.name}`);
   found.set(a.name,a);
  }
  if(new Set(selection.deployables).size!==selection.deployables.length)throw new Error('Duplicate deployable selection');
