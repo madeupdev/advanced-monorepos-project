@@ -9,7 +9,8 @@ const repository=process.cwd(),cli=path.resolve(process.argv[2]),round=process.a
 assert.ok(['transition','section-one','section-two'].includes(round));assert.equal(process.version,'v24.18.0');
 const root=path.join(process.env.RUNNER_TEMP||'/tmp',`section10-${round}`),evidence=path.join(repository,'section10-rehearsal-evidence');await mkdir(root);await mkdir(evidence,{recursive:true});
 const git=(...args)=>execFileSync('git',['-C',repository,...args],{maxBuffer:64*1024*1024});
-const commits=[['S09-final','06d3a05877a5ce5660471d33b08ab09536e83d57'],['S10-L01-deployables-built','9a5eee24b929a859174d0a518c49fc73a13f3be6'],['S10-L03-compatible-release','a316f46f8c85fbd811acae00f9a307c00442b7ce'],['S10-final','3bed9887df7c9fdbc35bca97f3e79eb9ddd430e9']];
+const checkpoints=JSON.parse(await readFile(path.join(repository,'tools/course-recovery/section10-checkpoints.json'),'utf8'));
+const commits=checkpoints.checkpoints.map(({id,sourceCommit})=>[id,sourceCommit]);
 const register={schemaVersion:1,courseVersion:'1.0.0',cliVersion:'1.0.0',cli:{packageName:'@madeup-video/course',repository:'https://github.com/madeupdev/madeup-video-course-cli'},project:{packageName:'@madeup-video/storefront',repository:'https://github.com/madeupdev/advanced-monorepos-project',localArtifacts:[]},release:{repository:'https://github.com/madeupdev/advanced-monorepos-project',tag:'course-v1.0.0',maxAssetBytes:268435456},states:commits.map(([id,sourceCommit])=>({id,sourceCommit,asset:id+'.tar.gz',sha256:'PENDING',status:'draft',verification:['pnpm lint','pnpm typecheck','pnpm test:all','pnpm build']})),recipes:[],authoringNotes:'Private rehearsal only: synthetic origin/main is confined to disposable builder clone; canonical ancestry is not asserted.'};
 const registerPath=path.join(root,'register.json');await writeFile(registerPath,JSON.stringify(register));
 const clone=path.join(root,'builder');execFileSync('git',['clone','--no-hardlinks',repository,clone]);execFileSync('git',['-C',clone,'remote','set-url','origin',register.project.repository+'.git']);execFileSync('git',['-C',clone,'update-ref','refs/remotes/origin/main',commits.at(-1)[1]]);
@@ -42,6 +43,7 @@ for(let index=1;index<commits.length;index++) {
  try {
   for(const name of [database,test])execFileSync('createdb',['-h','127.0.0.1','-U','course',name],{env});
   for(const [label,args] of [['install',['pnpm','install','--frozen-lockfile']],['generate',['pnpm','db:generate']],['browser',['pnpm','exec','playwright','install','--with-deps','chromium']],['migrate',['pnpm','exec','prisma','migrate','deploy']],['seed',['pnpm','exec','prisma','db','seed']],...['lint','typecheck','test:all','build'].map(n=>[n.replace(':','-'),['pnpm',n]])])record.commands.push(await command(id+'-'+label,'corepack',args,source,env));
+  await command(id+'-credential-regression',process.execPath,['--test','tests/tooling/artifact-credentials.test.mjs'],source,{...env,SECTION10_CREDENTIAL_CHECK:'1'});
   const builderName=`section10-${round}-${index}`;execFileSync('docker',['buildx','create','--name',builderName,'--driver','docker-container','--use']);builderCreated=builderName;
   const plan=path.join(work,'deployables.json'),out=path.join(work,'staged');await command(id+'-select',process.execPath,['scripts/affected-deployables.mjs','--full','--output',plan],source,env);
   await command(id+'-artifacts',process.execPath,['scripts/build-artifacts.mjs','--no-cache','--plan',plan,'--output',out],source,env);staged=JSON.parse(await readFile(path.join(out,'artifacts.json')));

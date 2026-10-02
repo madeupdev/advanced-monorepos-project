@@ -2,7 +2,7 @@ name: Artifact publication dry-run
 
 on:
   push:
-    branches: [codex/section-10-project]
+    branches: [codex/section-10-project, codex/section-10-recovery-correction]
   workflow_dispatch:
     inputs:
       base:

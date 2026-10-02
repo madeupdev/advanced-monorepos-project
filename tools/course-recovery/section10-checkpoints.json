@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "checkpoints": [
+    {
+      "id": "S09-final",
+      "sourceCommit": "06d3a05877a5ce5660471d33b08ab09536e83d57"
+    },
+    {
+      "id": "S10-L01-deployables-built-v2",
+      "sourceCommit": "9af7f07d99a8a0cc56a8f332012d9d4409c92458",
+      "supersedes": "9a5eee24b929a859174d0a518c49fc73a13f3be6",
+      "reviewFixCommit": "d0fdfa823ae1272caa654e5f577af65d91f0fc67"
+    },
+    {
+      "id": "S10-L03-compatible-release-v2",
+      "sourceCommit": "35ecab83a605f370715fcf63b1f9c150cd9cb740",
+      "supersedes": "a316f46f8c85fbd811acae00f9a307c00442b7ce",
+      "reviewFixCommit": "d0fdfa823ae1272caa654e5f577af65d91f0fc67"
+    },
+    {
+      "id": "S10-final-v2",
+      "sourceCommit": "1cf0df65825cb849c780c82bcde01d4fa86a7e0b",
+      "supersedes": "3bed9887df7c9fdbc35bca97f3e79eb9ddd430e9",
+      "reviewFixCommit": "d0fdfa823ae1272caa654e5f577af65d91f0fc67"
+    }
+  ]
+}
