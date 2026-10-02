@@ -3,5 +3,14 @@
   "name": "@madeup-video/database",
   "projectType": "library",
   "sourceRoot": "libs/database/src",
-  "tags": ["type:data-access", "runtime:server", "scope:rental"]
+  "tags": [
+    "type:data-access",
+    "runtime:server",
+    "scope:rental"
+  ],
+  "metadata": {
+    "owners": [
+      "madeupdev"
+    ]
+  }
 }

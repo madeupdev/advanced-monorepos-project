@@ -3,5 +3,14 @@
   "name": "@madeup-video/contracts",
   "projectType": "library",
   "sourceRoot": "libs/contracts/src",
-  "tags": ["type:contract", "runtime:universal", "scope:rental"]
+  "tags": [
+    "type:contract",
+    "runtime:universal",
+    "scope:rental"
+  ],
+  "metadata": {
+    "owners": [
+      "madeupdev"
+    ]
+  }
 }

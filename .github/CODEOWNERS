@@ -1,0 +1,18 @@
+# Existing repository owner; review routing does not configure branch protection.
+* @madeupdev
+/apps/storefront/ @madeupdev
+/apps/admin/ @madeupdev
+/apps/api/ @madeupdev
+/apps/api-e2e/ @madeupdev
+/apps/admin-e2e/ @madeupdev
+/libs/contracts/ @madeupdev
+/libs/rental-domain/ @madeupdev
+/libs/database/ @madeupdev
+/libs/ui/ @madeupdev
+/libs/testing/ @madeupdev
+/tests/tooling/ @madeupdev
+/.github/ @madeupdev
+/scripts/ @madeupdev
+/tools/ @madeupdev
+/prisma/ @madeupdev
+/AGENTS.md @madeupdev

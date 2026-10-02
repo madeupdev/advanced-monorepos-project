@@ -3,5 +3,14 @@
   "name": "@madeup-video/rental-domain",
   "projectType": "library",
   "sourceRoot": "libs/rental-domain/src",
-  "tags": ["type:domain", "runtime:universal", "scope:rental"]
+  "tags": [
+    "type:domain",
+    "runtime:universal",
+    "scope:rental"
+  ],
+  "metadata": {
+    "owners": [
+      "madeupdev"
+    ]
+  }
 }

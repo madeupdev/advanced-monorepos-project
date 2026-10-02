@@ -3,8 +3,14 @@
   "name": "@madeup-video/repository-tooling",
   "projectType": "library",
   "sourceRoot": "tests/tooling",
-  "implicitDependencies": ["*"],
-  "tags": ["type:tooling", "runtime:server", "scope:workspace"],
+  "implicitDependencies": [
+    "*"
+  ],
+  "tags": [
+    "type:tooling",
+    "runtime:server",
+    "scope:workspace"
+  ],
   "targets": {
     "test:tooling": {
       "executor": "nx:run-commands",
@@ -21,7 +27,9 @@
         "{projectRoot}/cache-fixture/**/*",
         "{workspaceRoot}/tests/cache-fixture-input.txt"
       ],
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
         "cwd": ".",
         "command": "node tests/tooling/cache-fixture/run.mjs"
@@ -43,5 +51,10 @@
         "command": "node tests/tooling/parallelism-fixture/run.mjs two"
       }
     }
+  },
+  "metadata": {
+    "owners": [
+      "madeupdev"
+    ]
   }
 }
