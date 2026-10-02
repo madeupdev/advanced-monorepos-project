@@ -120,3 +120,11 @@ export function readApiConfig(environment: Environment = process.env): ApiConfig
 
   return { port, apiOrigin, storefrontOrigin, adminOrigin, databaseUrl };
 }
+
+export function readApiBindHost(environment: Environment = process.env): string {
+  const host = environment.API_HOST ?? "127.0.0.1";
+  if (!["127.0.0.1", "0.0.0.0"].includes(host)) {
+    throw new Error("API_HOST must be 127.0.0.1 or 0.0.0.0.");
+  }
+  return host;
+}

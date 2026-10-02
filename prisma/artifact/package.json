@@ -1,0 +1,1 @@
+{"name":"@madeup-video/migrations-artifact","version":"0.0.0","private":true,"packageManager":"pnpm@11.17.0","dependencies":{"prisma":"7.7.0","dotenv":"17.4.2"}}
