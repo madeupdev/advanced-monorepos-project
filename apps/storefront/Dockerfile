@@ -10,7 +10,7 @@ ENV TEST_DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build_test NX_DAEM
 ARG API_ORIGIN=http://127.0.0.1:3333
 ARG API_PORT=3333
 ENV API_URL=$API_ORIGIN NEXT_PUBLIC_API_URL=$API_ORIGIN API_PORT=$API_PORT
-RUN DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build pnpm exec nx run @madeup-video/storefront:build --skip-nx-cache
+RUN mkdir -p apps/storefront/public && DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build pnpm exec nx run @madeup-video/storefront:build --skip-nx-cache
 FROM node:24.18.0-bookworm-slim@sha256:6f7b03f7c2c8e2e784dcf9295400527b9b1270fd37b7e9a7285cf83b6951452d AS runtime
 WORKDIR /app
 ENV NODE_OPTIONS=--max-old-space-size=384 PNPM_MAX_WORKERS=1
