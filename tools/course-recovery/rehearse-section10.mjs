@@ -46,6 +46,8 @@ for(let index=1;index<commits.length;index++) {
   const builderName=`section10-${round}-${index}`;execFileSync('docker',['buildx','create','--name',builderName,'--driver','docker-container','--use']);builderCreated=builderName;
   const plan=path.join(work,'deployables.json'),out=path.join(work,'staged');await command(id+'-select',process.execPath,['scripts/affected-deployables.mjs','--full','--output',plan],source,env);
   await command(id+'-artifacts',process.execPath,['scripts/build-artifacts.mjs','--no-cache','--plan',plan,'--output',out],source,env);staged=JSON.parse(await readFile(path.join(out,'artifacts.json')));
+  // Fixture FROM uses an engine-local API ID, so build it with the engine builder.
+  execFileSync('docker',['buildx','use','default']);
   await command(id+'-runtime',process.execPath,['scripts/verify-artifacts.mjs','--manifest',path.join(out,'artifacts.json'),'--output',path.join(evidence,id+'-runtime.json')],source,env);
   if(index>=2)await command(id+'-compatibility',process.execPath,['--test','tests/tooling/release-compatibility.test.mjs'],source,{...env,SECTION10_API_IMAGE:staged.artifacts.find(a=>a.name==='api').imageId,SECTION10_COMPATIBILITY:path.join(evidence,id+'-compatibility.json')});
   else {
