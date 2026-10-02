@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { createReadStream } from 'node:fs';
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
@@ -11,6 +11,8 @@ const args=process.argv.slice(2),value=f=>args[args.indexOf(f)+1];
 if(!args.includes('--plan')||!args.includes('--output'))throw new Error('Required --plan <json> --output <new directory>');
 const selection=JSON.parse(await readFile(value('--plan'),'utf8'));
 if(!Array.isArray(selection.deployables)||selection.deployables.some(n=>!names.includes(n))||new Set(selection.deployables).size!==selection.deployables.length)throw new Error('Invalid deployable selection');
+const sourceRoot=(await exec('git',['rev-parse','--show-toplevel'])).stdout.trim();
+if(await realpath(sourceRoot)!==await realpath(process.cwd()))throw new Error('Build from the project Git root; recovered sources need their own prepared Git history');
 const output=path.resolve(value('--output'));await mkdir(output); // refuse overwrite
 const sourceCommit=(await exec('git',['rev-parse','HEAD'])).stdout.trim();
 const buildTime=new Date().toISOString();
