@@ -44,6 +44,20 @@ test('public lint rejects a forbidden dependency with a cold execution graph', a
     assert.ifError(accepted.error);
     assert.equal(accepted.status, 0, accepted.stdout + accepted.stderr);
     assert.doesNotMatch(accepted.stdout + accepted.stderr, /No cached ProjectGraph|rule will be skipped/i);
+    const stdinViolation = spawnSync(process.platform === 'win32' ? 'corepack.cmd' : 'corepack', ['pnpm', 'lint', '--', '--stdin', '--stdin-filename', 'libs/contracts/src/index.ts'], {
+      cwd: source, env: environment, encoding: 'utf8', timeout: 120_000,
+      shell: process.platform === 'win32', input: "export { database } from '@madeup-video/database';\n",
+    });
+    assert.ifError(stdinViolation.error);
+    assert.equal(stdinViolation.status, 1, stdinViolation.stdout + stdinViolation.stderr);
+    assert.match(stdinViolation.stdout + stdinViolation.stderr, /@nx\/enforce-module-boundaries/);
+    const uncached = spawnSync(process.platform === 'win32' ? 'corepack.cmd' : 'corepack', ['pnpm', 'lint', '--', 'libs/contracts/src/index.ts'], {
+      cwd: source, env: { ...environment, NX_CACHE_PROJECT_GRAPH: 'false', NX_WORKSPACE_DATA_DIRECTORY: join(work, 'uncached-workspace') },
+      encoding: 'utf8', timeout: 120_000, shell: process.platform === 'win32',
+    });
+    assert.ifError(uncached.error);
+    assert.equal(uncached.status, 1, uncached.stdout + uncached.stderr);
+    assert.match(uncached.stdout + uncached.stderr, /refusing a passing result/);
     await writeFile(join(source, 'nx.json'), '{ invalid JSON');
     const unavailable = runLint();
     assert.ifError(unavailable.error);
