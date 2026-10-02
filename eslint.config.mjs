@@ -133,6 +133,8 @@ export default defineConfig([
             "../../apps/storefront/lib/config/server.ts",
             "../../apps/storefront/scripts/next.mjs",
             "../../scripts/ci-plan.mjs",
+            "../../scripts/affected-deployables.mjs",
+            "../../scripts/artifact-publication.mjs",
             "../../scripts/lib/browser-bundle-leakage.mjs",
             "../../scripts/lib/local-development.mjs",
             "../../scripts/lib/local-environment.mjs",
