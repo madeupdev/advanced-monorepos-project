@@ -1,6 +1,9 @@
 name: Section 10 private recovery rehearsals
 on:
   workflow_dispatch:
+  push:
+    branches: [codex/section-10-project]
+    paths: [.github/workflows/rehearse-section10.yml, tools/course-recovery/rehearse-section10.mjs]
 permissions:
   contents: read
 jobs:
