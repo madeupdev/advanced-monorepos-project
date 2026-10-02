@@ -13,7 +13,7 @@
     "dev:full": "node scripts/dev.mjs full",
     "build": "pnpm db:generate && nx run-many -t build --projects=@madeup-video/api,@madeup-video/storefront,@madeup-video/admin --parallel=1",
     "start": "nx run @madeup-video/storefront:start",
-    "lint": "eslint .",
+    "lint": "node scripts/lint.mjs",
     "typecheck": "pnpm db:generate && nx run-many -t typecheck --projects=@madeup-video/api,@madeup-video/api-e2e,@madeup-video/storefront,@madeup-video/admin,@madeup-video/admin-e2e",
     "test": "pnpm test:all",
     "test:all": "pnpm test:tooling && pnpm test:unit && pnpm test:integration && pnpm test:api && pnpm test:e2e",

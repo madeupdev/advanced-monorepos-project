@@ -394,7 +394,7 @@ test('repository aggregates cover the API and admin projects', async () => {
   );
   const scripts = packageJson.scripts;
 
-  assert.equal(scripts.lint, 'eslint .');
+  assert.equal(scripts.lint, 'node scripts/lint.mjs');
   assert.match(scripts.build, /@madeup-video\/api/);
   assert.match(scripts.build, /@madeup-video\/admin/);
   assert.match(scripts.build, /--parallel=1/);
