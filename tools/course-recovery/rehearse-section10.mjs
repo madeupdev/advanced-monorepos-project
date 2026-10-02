@@ -4,7 +4,6 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile, rm, lstat } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { inspectAndExtractArchive, verifyExtractedTree } from './archive.mjs';
 const repository=process.cwd(),cli=path.resolve(process.argv[2]),round=process.argv[3];
 assert.ok(['transition','section-one','section-two'].includes(round));assert.equal(process.version,'v24.18.0');
