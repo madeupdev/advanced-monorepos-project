@@ -40,3 +40,10 @@ test('a correctly hashed archive for another image is rejected',async()=>{
   await assert.rejects(()=>verifyStaged({artifacts:[{...artifact('api'),archive:'api.docker.tar',archiveSha256}]},directory),/archive image identity/);
  } finally {await rm(directory,{recursive:true,force:true});}
 });
+
+for (const buildTime of ['2026-02-31T10:00:00.000Z','2026-04-31T10:00:00Z','2026-10-02T24:00:00.000Z']) test('rejects normalized timestamp '+buildTime,()=>{
+ assert.throws(()=>publicationPlan({manifest:{sourceCommit:source,artifacts:[{...artifact('api'),buildTime}]},selection:{deployables:['api']},event}),/metadata|provenance/);
+});
+for (const buildTime of ['2024-02-29T10:00:00.000Z','2026-10-02T10:00:00Z']) test('accepts valid UTC timestamp '+buildTime,()=>{
+ assert.equal(publicationPlan({manifest:{sourceCommit:source,artifacts:[{...artifact('api'),buildTime}]},selection:{deployables:['api']},event}).artifacts[0].buildTime,buildTime);
+});

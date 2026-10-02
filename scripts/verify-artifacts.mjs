@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { readFile,writeFile } from 'node:fs/promises';
-import { verifyStaged } from './artifact-publication.mjs';
+import { verifyStaged,verifyNoLocalCredentials } from './artifact-publication.mjs';
 import path from 'node:path';
 const exec=promisify(execFile),docker=async(...args)=>(await exec('docker',args,{maxBuffer:10*1024*1024})).stdout.trim();
 const args=process.argv.slice(2),value=f=>args[args.indexOf(f)+1];
@@ -52,7 +52,7 @@ try {
  const asset=deep.match(/src="([^" ]*\/assets\/[^" ]+)"/)?.[1];if(!asset)throw new Error('No admin static asset');
  await docker('exec',admin,'wget','-qO-','http://127.0.0.1:8080'+asset);checks.adminStaticAsset=true;
  }
- for(const name of [artifacts.api&&api,artifacts.storefront&&storefront,artifacts.admin&&admin].filter(Boolean))await docker('exec',name,'sh','-c','test ! -e /app/.env && test ! -e /app/.git && test ! -e /usr/share/nginx/html/.env');checks.noLocalCredentials=true;
+ await verifyNoLocalCredentials(manifest.artifacts,docker);checks.noLocalCredentials=true;
  if(Object.values(checks).some(v=>v!==true))throw new Error('Runtime assertion failed');
  result={sourceCommit:manifest.sourceCommit,checks,artifactIds:manifest.artifacts.map(a=>({name:a.name,imageId:a.imageId})),platform:process.platform,mode:args.includes('--selected')?'selected-smoke':'full-integration'};
 } finally {

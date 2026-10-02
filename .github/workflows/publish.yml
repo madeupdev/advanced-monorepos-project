@@ -149,11 +149,11 @@ jobs:
       - run: corepack pnpm install --frozen-lockfile
       - name: Select deployables using verified comparison or conservative full selection
         env:
-          CI_BASE: ${{ inputs.base }}
+          CI_BASE: ${{ inputs.base || github.event.before }}
           CI_HEAD: ${{ github.sha }}
           TEST_DATABASE_URL: postgresql://plan:plan@127.0.0.1:5432/plan_test
         run: |
-          if [ -n "$CI_BASE" ]; then
+          if [ -n "$CI_BASE" ] && [ "$CI_BASE" != "0000000000000000000000000000000000000000" ]; then
             node scripts/affected-deployables.mjs --output deployables.json
           else
             node scripts/affected-deployables.mjs --full --output deployables.json
