@@ -2,13 +2,13 @@ name: Section 10 private recovery rehearsals
 on:
   workflow_dispatch:
   push:
-    branches: [codex/section-10-project]
-    paths: [.github/workflows/rehearse-section10.yml, tools/course-recovery/rehearse-section10.mjs]
+    branches: [codex/section-10-project, codex/section-10-recovery-correction]
+    paths: [.github/workflows/rehearse-section10.yml, tools/course-recovery/rehearse-section10.mjs, tools/course-recovery/section10-checkpoints.json]
 permissions:
   contents: read
 jobs:
   rehearse:
-    if: github.repository == 'madeupdev/advanced-monorepos-project' && github.ref == 'refs/heads/codex/section-10-project'
+    if: github.repository == 'madeupdev/advanced-monorepos-project' && (github.ref == 'refs/heads/codex/section-10-project' || github.ref == 'refs/heads/codex/section-10-recovery-correction')
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     strategy:
