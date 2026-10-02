@@ -42,7 +42,7 @@ for(let index=1;index<commits.length;index++) {
  const record={round,state:id,sourceCommit:commit,previous,archiveSha256:manifest.assets[index].sha256,commands:[]};let builderCreated=false,staged;
  try {
   for(const name of [database,test])execFileSync('createdb',['-h','127.0.0.1','-U','course',name],{env});
-  for(const [label,args] of [['install',['pnpm','install','--frozen-lockfile']],['generate',['pnpm','db:generate']],['browser',['pnpm','exec','playwright','install','chromium']],['migrate',['pnpm','exec','prisma','migrate','deploy']],['seed',['pnpm','exec','prisma','db','seed']],...['lint','typecheck','test:all','build'].map(n=>[n.replace(':','-'),['pnpm',n]])])record.commands.push(await command(id+'-'+label,'corepack',args,source,env));
+  for(const [label,args] of [['install',['pnpm','install','--frozen-lockfile']],['generate',['pnpm','db:generate']],['browser',['pnpm','exec','playwright','install','--with-deps','chromium']],['migrate',['pnpm','exec','prisma','migrate','deploy']],['seed',['pnpm','exec','prisma','db','seed']],...['lint','typecheck','test:all','build'].map(n=>[n.replace(':','-'),['pnpm',n]])])record.commands.push(await command(id+'-'+label,'corepack',args,source,env));
   const builderName=`section10-${round}-${index}`;execFileSync('docker',['buildx','create','--name',builderName,'--driver','docker-container','--use']);builderCreated=builderName;
   const plan=path.join(work,'deployables.json'),out=path.join(work,'staged');await command(id+'-select',process.execPath,['scripts/affected-deployables.mjs','--full','--output',plan],source,env);
   await command(id+'-artifacts',process.execPath,['scripts/build-artifacts.mjs','--no-cache','--plan',plan,'--output',out],source,env);staged=JSON.parse(await readFile(path.join(out,'artifacts.json')));
@@ -52,20 +52,33 @@ for(let index=1;index<commits.length;index++) {
   if(index>=2)await command(id+'-compatibility',process.execPath,['--test','tests/tooling/release-compatibility.test.mjs'],source,{...env,SECTION10_API_IMAGE:staged.artifacts.find(a=>a.name==='api').imageId,SECTION10_COMPATIBILITY:path.join(evidence,id+'-compatibility.json')});
   else {
    record.inspectionFixtureIds=[];
-   for(const version of ['old','new']){const tag=`section10-inspect-${round}-${version}`;execFileSync('docker',['buildx','build','--load','--build-arg',`API_IMAGE=${staged.artifacts.find(a=>a.name==='api').imageId}`,'--build-arg',`FIXTURE_VERSION=${version}`,'-t',tag,'fixtures/release-compatibility'],{cwd:source,stdio:'inherit'});record.inspectionFixtureIds.push({version,imageId:execFileSync('docker',['image','inspect',tag,'--format','{{.Id}}']).toString().trim()});execFileSync('docker',['image','rm',tag]);}
+   for(const version of ['old','new']){const tag=`section10-inspect-${round}-${version}`;execFileSync('docker',['buildx','build','--load','--build-arg',`API_IMAGE=${staged.artifacts.find(a=>a.name==='api').tag}`,'--build-arg',`FIXTURE_VERSION=${version}`,'-t',tag,'fixtures/release-compatibility'],{cwd:source,stdio:'inherit'});record.inspectionFixtureIds.push({version,imageId:execFileSync('docker',['image','inspect',tag,'--format','{{.Id}}']).toString().trim()});execFileSync('docker',['image','rm',tag]);}
   }
   const event=path.join(work,'event.json');await writeFile(event,JSON.stringify({name:'workflow_dispatch',repository:'madeupdev/advanced-monorepos-project',ref:'refs/heads/codex/section-10-project',sha:commit,mode:'dry-run'}));
   await command(id+'-publication',process.execPath,['scripts/artifact-publication.mjs','--manifest',path.join(out,'artifacts.json'),'--plan',plan,'--event',event,'--output',path.join(evidence,id+'-dry-run.json')],source,env);
   await writeFile(path.join(evidence,id+'-artifacts.json'),JSON.stringify(staged,null,2));
+  if(index===3)for(const name of ['api','admin','storefront','migrations']) {
+   const subset=path.join(out,name+'-manifest.json');await writeFile(subset,JSON.stringify({...staged,artifacts:staged.artifacts.filter(a=>a.name===name)}));
+   await command(id+'-selected-'+name,process.execPath,['scripts/verify-artifacts.mjs','--selected','--manifest',subset,'--output',path.join(evidence,id+'-selected-'+name+'.json')],source,env);
+   const selectedPlan=path.join(work,name+'-plan.json');await writeFile(selectedPlan,JSON.stringify({deployables:[name]}));
+   const dryRun=path.join(evidence,id+'-selected-'+name+'-dry-run.json');await command(id+'-selected-publication-'+name,process.execPath,['scripts/artifact-publication.mjs','--manifest',path.join(out,'artifacts.json'),'--plan',selectedPlan,'--event',event,'--output',dryRun],source,env);
+   assert.deepEqual(JSON.parse(await readFile(dryRun)).artifacts.map(a=>a.name),[name]);
+  }
   const tree=git('ls-tree','-rz','--full-tree',commit).toString().split('\0').filter(Boolean);
   for(const entry of tree){const [meta,file]=entry.split('\t'),[mode,,blob]=meta.split(' ');assert.ok((await readFile(path.join(source,file))).equals(git('cat-file','blob',blob)),`Source changed ${file}`);assert.equal((await lstat(path.join(source,file))).mode&0o777,mode==='100755'?0o755:0o644);}
   assert.equal(execFileSync('git',['-C',source,'diff','--binary','HEAD']).length,0);record.sourceRestored=true;record.status='passed';
  } finally {
-  if(staged)for(const artifact of staged.artifacts)execFileSync('docker',['image','rm',artifact.tag]);
-  if(builderCreated)execFileSync('docker',['buildx','rm',builderCreated]);
-  for(const name of [database,test])execFileSync('dropdb',['--if-exists','-h','127.0.0.1','-U','course',name],{env});
+  const cleanupErrors=[];const clean=(label,fn)=>{try{fn();}catch(error){cleanupErrors.push({label,message:error.message});}};
+  // A failed multi-image build may not have written its manifest. Inspect only
+  // the exact task source prefix and verify OCI revision before deleting tags.
+  const taskTags=execFileSync('docker',['image','ls','--filter',`reference=section10-${commit.slice(0,12)}-*`,'--format','{{.Repository}}:{{.Tag}}']).toString().trim().split('\n').filter(Boolean);
+  for(const tag of taskTags)clean(tag,()=>{assert.equal(execFileSync('docker',['image','inspect',tag,'--format','{{index .Config.Labels "org.opencontainers.image.revision"}}']).toString().trim(),commit);execFileSync('docker',['image','rm',tag]);});
+  for(const version of ['old','new'])clean('inspection-'+version,()=>{const tag=`section10-inspect-${round}-${version}`;if(spawnSync('docker',['image','inspect',tag]).status===0)execFileSync('docker',['image','rm',tag]);});
+  if(builderCreated)clean('builder',()=>execFileSync('docker',['buildx','rm',builderCreated]));
+  for(const name of [database,test])clean(name,()=>execFileSync('dropdb',['--if-exists','-h','127.0.0.1','-U','course',name],{env}));
+  record.cleanupErrors=cleanupErrors;
   record.cleanup={taskContainersAbsent:!execFileSync('docker',['ps','-a','--filter','label=course.task=section10','--format','{{.Names}}']).length,taskNetworksAbsent:!execFileSync('docker',['network','ls','--filter','label=course.task=section10','--format','{{.Name}}']).length};assert.ok(Object.values(record.cleanup).every(Boolean));
-  records.push(record);await writeFile(path.join(evidence,'results.json'),JSON.stringify({round,platform:process.platform,cliCommit:'2dcd4dc53b9f40923f604f521fbf05453e83c376',deterministicBuilds:2,strictTreesVerified:8,privateSyntheticAncestry:true,externallyPublished:false,records},null,2));await rm(work,{recursive:true,force:true});
+  records.push(record);await writeFile(path.join(evidence,'results.json'),JSON.stringify({round,platform:process.platform,cliCommit:'2dcd4dc53b9f40923f604f521fbf05453e83c376',deterministicBuilds:2,strictTreesVerified:8,privateSyntheticAncestry:true,externallyPublished:false,records},null,2));await rm(work,{recursive:true,force:true});assert.equal(cleanupErrors.length,0,'Cleanup failures recorded in results.json');
  }
 }
 await rm(root,{recursive:true,force:true});
