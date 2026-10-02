@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 63
+    },
+    "type": {
+      "type": "string",
+      "enum": ["domain", "contract"]
+    },
+    "runtime": {
+      "type": "string",
+      "enum": ["universal"]
+    },
+    "scope": {
+      "type": "string",
+      "enum": ["rental", "shared"]
+    },
+    "owner": {
+      "type": "string",
+      "enum": ["madeupdev"]
+    },
+    "dryRun": {
+      "type": "boolean"
+    },
+    "interactive": {
+      "type": "boolean"
+    }
+  },
+  "required": ["name", "type", "runtime", "scope", "owner"],
+  "additionalProperties": false
+}
