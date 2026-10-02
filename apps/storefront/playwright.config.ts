@@ -13,6 +13,7 @@ const serverEnvironment = {
 };
 
 export default defineConfig({
+  captureGitInfo: { commit: true, diff: false },
   testDir: "./tests/e2e",
   fullyParallel: false,
   retries: 0,

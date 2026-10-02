@@ -3,21 +3,23 @@ name: CI
 on:
   pull_request:
   push:
-    branches:
-      - main
+    branches: [main]
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   validate:
-    name: Validate monorepo applications
-    runs-on: ubuntu-latest
+    name: Validate dependency-aware monorepo
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/madeup_video?schema=public
       TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/madeup_video_test?schema=public
-
+      NX_DAEMON: 'false'
+      NX_NO_CLOUD: 'true'
+      NX_PREFER_NODE_STRIP_TYPES: 'false'
     services:
       postgres:
         image: postgres:17
@@ -25,73 +27,97 @@ jobs:
           POSTGRES_DB: madeup_video
           POSTGRES_PASSWORD: postgres
           POSTGRES_USER: postgres
-        ports:
-          - 5432:5432
+        ports: ['5432:5432']
         options: >-
           --health-cmd "pg_isready --username=postgres --dbname=madeup_video"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
     steps:
-      - name: Check out repository
+      - name: Check out explicit event head and history
         uses: actions/checkout@v7
-
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
       - name: Install pnpm
         uses: pnpm/action-setup@v6
         with:
           version: 11.17.0
-
       - name: Install Node.js
         uses: actions/setup-node@v7
         with:
           node-version: 24.18.0
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
-
+      - name: Isolate runner task state
+        shell: bash
+        run: |
+          echo "NX_CACHE_DIRECTORY=$RUNNER_TEMP/nx-cache" >> "$GITHUB_ENV"
+          echo "NX_WORKSPACE_DATA_DIRECTORY=$RUNNER_TEMP/nx-workspace" >> "$GITHUB_ENV"
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
+        run: corepack pnpm install --frozen-lockfile
+      - name: Find last successful default-branch validation
+        id: success
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          HEAD_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          # API uncertainty falls back to full validation; event.before is not a success boundary.
+          if gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?branch=$DEFAULT_BRANCH&event=push&status=success&per_page=100" > "$RUNNER_TEMP/successful-runs.json"; then
+            sha=$(jq -r --arg head "$HEAD_SHA" '.workflow_runs | map(select(.head_sha != $head)) | sort_by(.run_started_at) | reverse | .[0].head_sha // empty' "$RUNNER_TEMP/successful-runs.json")
+            if [[ "$sha" =~ ^[a-f0-9]{40}$ ]]; then echo "sha=$sha" >> "$GITHUB_OUTPUT"; fi
+          else
+            echo '::warning::Success history unavailable; full validation required.'
+          fi
+      - name: Calculate comparison range
+        id: range
+        env:
+          CI_EVENT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          LAST_SUCCESSFUL_SHA: ${{ steps.success.outputs.sha }}
+        run: node scripts/ci-base.mjs
       - name: Create test database
-        run: >-
-          docker exec "${{ job.services.postgres.id }}"
-          createdb --username=postgres madeup_video_test
-
+        run: docker exec "${{ job.services.postgres.id }}" createdb --username=postgres madeup_video_test
+      - name: Generate Prisma client
+        run: corepack pnpm db:generate
       - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Lint
-        run: pnpm lint
-
-      - name: Type-check
-        run: pnpm typecheck
-
+        run: corepack pnpm exec playwright install --with-deps chromium
       - name: Portable local-development tests
         run: node --test tests/tooling/local-development.test.mjs
-
-      - name: Local environment tooling tests
-        run: pnpm test:tooling
-
-      - name: Unit tests
-        run: pnpm test:unit
-
-      - name: Integration tests
-        run: pnpm test:integration
-
-      - name: API contract tests
-        run: pnpm test:api
-
-      - name: Production build
-        run: pnpm build
-
-      - name: End-to-end tests
-        run: pnpm test:e2e
-
-      - name: Upload Playwright failure evidence
-        if: failure()
+      - name: Plan required validation
+        env:
+          CI_BASE: ${{ steps.range.outputs.base }}
+          CI_HEAD: ${{ steps.range.outputs.head }}
+          CI_FULL: ${{ steps.range.outputs.full }}
+        run: node scripts/ci-plan.mjs --output ci-plan.json
+      - name: Execute required validation
+        shell: bash
+        run: |
+          mkdir -p ci-results
+          set -o pipefail
+          node scripts/ci-plan.mjs --run --plan ci-plan.json 2>&1 | tee ci-results/validation.log
+      - name: Audit retained diagnostics
+        id: audit
+        if: always()
+        run: node scripts/ci-artifacts.mjs ci-plan.json ci-results test-results playwright-report
+      - name: Retain validation plan and reports
+        if: always() && steps.audit.outcome == 'success'
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-failure-evidence
+          name: ci-diagnostics-${{ github.run_id }}
+          path: |
+            ci-plan.json
+            ci-results/
+          if-no-files-found: ignore
+          retention-days: 5
+      - name: Retain browser failure evidence
+        if: failure() && steps.audit.outcome == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-failure-evidence-${{ github.run_id }}
           path: |
             test-results/
             playwright-report/

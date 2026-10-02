@@ -394,7 +394,7 @@ test('repository aggregates cover the API and admin projects', async () => {
   );
   const scripts = packageJson.scripts;
 
-  assert.equal(scripts.lint, 'eslint .');
+  assert.equal(scripts.lint, 'node scripts/lint.mjs');
   assert.match(scripts.build, /@madeup-video\/api/);
   assert.match(scripts.build, /@madeup-video\/admin/);
   assert.match(scripts.build, /--parallel=1/);
@@ -449,14 +449,18 @@ test('CI validates the complete API and storefront workspace', async () => {
     'utf8',
   );
 
-  assert.match(workflow, /run: pnpm lint/);
-  assert.match(workflow, /run: pnpm typecheck/);
-  assert.match(workflow, /run: pnpm test:tooling/);
-  assert.match(workflow, /run: pnpm test:unit/);
-  assert.match(workflow, /run: pnpm test:integration/);
-  assert.match(workflow, /run: pnpm build/);
-  assert.match(workflow, /run: pnpm test:api/);
-  assert.match(workflow, /run: pnpm test:e2e/);
+  assert.match(workflow, /ci-plan\.mjs --run --plan ci-plan\.json/);
+  const { createPlan } = await import('../../scripts/ci-plan.mjs');
+  const plan = await createPlan({ full: true, files: [] });
+  assert.ok(plan.global.includes('lint'));
+  for (const target of [
+    '@madeup-video/repository-tooling:test:tooling',
+    '@madeup-video/storefront:typecheck', '@madeup-video/api:typecheck',
+    '@madeup-video/storefront:test:unit', '@madeup-video/storefront:test:integration',
+    '@madeup-video/api-e2e:test', '@madeup-video/storefront:test:e2e',
+    '@madeup-video/admin-e2e:test', '@madeup-video/storefront:build',
+    '@madeup-video/api:build', '@madeup-video/admin:build',
+  ]) assert.ok(plan.tasks.includes(target), `Full CI omitted ${target}`);
 });
 
 test('exposes only the five approved library entry points', async () => {
