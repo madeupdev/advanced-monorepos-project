@@ -134,6 +134,7 @@ export default defineConfig([
             "../../apps/storefront/scripts/next.mjs",
             "../../scripts/ci-plan.mjs",
             "../../scripts/team-demo.mjs",
+            "../../scripts/upgrade-plan.mjs",
             "../../scripts/workspace-conventions.mjs",
             "../../scripts/affected-deployables.mjs",
             "../../scripts/artifact-publication.mjs",
