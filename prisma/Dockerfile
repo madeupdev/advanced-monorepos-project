@@ -3,7 +3,7 @@ WORKDIR /app
 ENV NODE_OPTIONS=--max-old-space-size=384 PNPM_MAX_WORKERS=1
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 RUN corepack enable && corepack prepare pnpm@11.17.0 --activate
-COPY prisma/artifact/package.json prisma/artifact/pnpm-lock.yaml ./
+COPY prisma/artifact/package.json prisma/artifact/pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --prod --frozen-lockfile --network-concurrency=2 --child-concurrency=1
 COPY prisma ./prisma
 COPY prisma.config.ts ./prisma.config.ts

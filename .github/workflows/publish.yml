@@ -160,6 +160,12 @@ jobs:
           fi
       - name: Build from clean committed source and stage local image archives
         run: node scripts/build-artifacts.mjs --plan deployables.json --output staged
+      - name: Verify all four independent runtimes and compatibility window
+        if: inputs.base == ''
+        run: |
+          SECTION10_ARTIFACT_MANIFEST=staged/artifacts.json SECTION10_RUNTIME_OUTPUT=runtime.json node --test tests/tooling/artifact-runtime.test.mjs
+          export SECTION10_API_IMAGE=$(node -e "console.log(JSON.parse(require('fs').readFileSync('staged/artifacts.json')).artifacts.find(a=>a.name==='api').imageId)")
+          SECTION10_COMPATIBILITY=compatibility.json node --test tests/tooling/release-compatibility.test.mjs
       - name: Authorize dry-run and verify required provenance
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -176,4 +182,6 @@ jobs:
             staged/
             deployables.json
             dry-run.json
+            runtime.json
+            compatibility.json
           retention-days: 2
