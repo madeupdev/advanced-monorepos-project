@@ -2,6 +2,7 @@
   "name": "@madeup-video/storefront",
   "version": "0.0.0",
   "private": true,
+  "generators": "./tools/generators.json",
   "license": "SEE LICENSE IN LICENSE.md",
   "type": "module",
   "scripts": {
@@ -61,6 +62,7 @@
   "devDependencies": {
     "@nestjs/schematics": "11.1.0",
     "@nestjs/testing": "11.1.29",
+    "@nx/devkit": "23.1.1",
     "@nx/eslint-plugin": "23.1.1",
     "@nx/js": "23.1.1",
     "@nx/nest": "23.1.1",
