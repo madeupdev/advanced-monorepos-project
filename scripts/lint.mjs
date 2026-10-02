@@ -33,6 +33,7 @@ if (requested[0] === '--') requested.shift();
 const eslintBin = join(dirname(require.resolve('eslint/package.json')), 'bin/eslint.js');
 const eslint = spawnSync(process.execPath, [eslintBin, ...(requested.length ? requested : ['.'])], {
   cwd, env: environment, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+  stdio: ['inherit', 'pipe', 'pipe'],
 });
 process.stdout.write(eslint.stdout ?? '');
 process.stderr.write(eslint.stderr ?? '');
