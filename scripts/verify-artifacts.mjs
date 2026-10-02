@@ -11,13 +11,14 @@ await verifyStaged(manifest,path.dirname(path.resolve(value('--manifest'))));
 const artifacts=Object.fromEntries(manifest.artifacts.map(a=>[a.name,a]));
 for(const name of ['api','admin','storefront','migrations'])if(!artifacts[name])throw new Error(`Runtime suite requires all four images: missing ${name}`);
 const task=`section10-runtime-${process.pid}`,network=task,db=task+'-db',api=task+'-api',admin=task+'-admin',storefront=task+'-storefront';
-const containers=[],checks={};let net=false,result;
+const containers=[],volumes=[],checks={};let net=false,result;
 async function run(name,options,image){await docker('run','-d','--name',name,'--label','course.task=section10','--network',network,...options,image);containers.push(name);}
 async function wait(name,command){for(let i=0;i<60;i++){try{return await docker('exec',name,...command);}catch{await new Promise(r=>setTimeout(r,500));}}throw new Error(`Runtime not ready ${name}`);}
 try {
  await docker('network','create','--label','course.task=section10',network);net=true;
- await run(db,['--network-alias','database','-e','POSTGRES_DB=runtime','-e','POSTGRES_PASSWORD=fixture'],'postgres:17@sha256:d74eeac9a635390a49bc21bd49fccd973de707e2a53a76ac49b552b8712ec46f');
- await wait(db,['pg_isready','-U','postgres','-d','runtime']);
+ await run(db,['--network-alias','database','-e','POSTGRES_DB=runtime','-e','POSTGRES_PASSWORD=fixture','-e','PGPASSWORD=fixture'],'postgres:17@sha256:d74eeac9a635390a49bc21bd49fccd973de707e2a53a76ac49b552b8712ec46f');
+ volumes.push(...JSON.parse(await docker('inspect',db))[0].Mounts.filter(m=>m.Type==='volume').map(m=>m.Name));
+ await wait(db,['psql','-h','127.0.0.1','-U','postgres','-d','runtime','-Atc','SELECT 1']);
  const databaseUrl='postgresql://postgres:fixture@database:5432/runtime';
  const migration=await docker('run','--rm','--network',network,'-e',`DATABASE_URL=${databaseUrl}`,artifacts.migrations.imageId);
  if(!/applied|No pending migrations/.test(migration))throw new Error('Migration command did not report application');checks.migrationExecuted=true;
@@ -40,7 +41,7 @@ try {
  if(Object.values(checks).some(v=>v!==true))throw new Error('Runtime assertion failed');
  result={sourceCommit:manifest.sourceCommit,checks,artifactIds:manifest.artifacts.map(a=>({name:a.name,imageId:a.imageId})),platform:process.platform};
 } finally {
- for(const name of containers.reverse())await docker('rm','-f',name);
+ for(const name of containers.reverse())await docker('rm','-f','-v',name);
  if(net)await docker('network','rm',network);
- if(result){result.cleanup={containersRemoved:!(await docker('ps','-a','--filter',`name=${task}`,'--format','{{.Names}}')),networkRemoved:!(await docker('network','ls','--filter',`name=${task}`,'--format','{{.Name}}'))};await writeFile(value('--output'),JSON.stringify(result,null,2)+'\n');}
+ if(result){result.cleanup={volumesRemoved:(await Promise.all(volumes.map(async volume=>{try{await docker('volume','inspect',volume);return false;}catch{return true;}}))).every(Boolean),containersRemoved:!(await docker('ps','-a','--filter',`name=${task}`,'--format','{{.Names}}')),networkRemoved:!(await docker('network','ls','--filter',`name=${task}`,'--format','{{.Name}}'))};await writeFile(value('--output'),JSON.stringify(result,null,2)+'\n');}
 }

@@ -8,5 +8,5 @@ test('independent images run, migrate and serve required static assets', {skip:!
  execFileSync(process.execPath,['scripts/verify-artifacts.mjs','--manifest',process.env.SECTION10_ARTIFACT_MANIFEST,'--output',output],{stdio:'inherit',timeout:180000});
  const result=JSON.parse(await readFile(output,'utf8'));
  for(const check of ['migrationExecuted','apiHealth','apiDatabaseQuery','storefrontStartup','storefrontStaticAsset','adminDeepLink','adminStaticAsset','noLocalCredentials'])assert.equal(result.checks[check],true,check);
- assert.equal(result.cleanup.containersRemoved,true);assert.equal(result.cleanup.networkRemoved,true);
+ assert.equal(result.cleanup.containersRemoved,true);assert.equal(result.cleanup.networkRemoved,true);assert.equal(result.cleanup.volumesRemoved,true);
 });

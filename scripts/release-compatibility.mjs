@@ -5,7 +5,8 @@ const exec=promisify(execFile);
 const docker=async(...args)=>(await exec('docker',args,{maxBuffer:20*1024*1024})).stdout.trim();
 const task=`section10-compat-${process.pid}`;
 const network=task;const db=`${task}-db`;const old=`${task}-old`;const fresh=`${task}-new`;
-const matrix=[];const containers=[];let networkCreated=false;
+const sourceBefore=(await exec('git',['diff','--binary','HEAD'])).stdout;
+const matrix=[];const containers=[];const volumes=[];const fixtureTags=[];let networkCreated=false;
 const output=process.argv[process.argv.indexOf('--output')+1];
 if(!process.argv.includes('--output'))throw new Error('--output is required');
 const sql=async statement=>docker('exec',db,'psql','-U','postgres','-d','compatibility','-v','ON_ERROR_STOP=1','-c',statement);
@@ -15,15 +16,18 @@ async function observe(stage){const a=await probe(old),b=await probe(fresh);matr
 let result;
 try {
  await docker('network','create','--label','course.task=section10',network);networkCreated=true;
- await docker('run','-d','--name',db,'--network',network,'--label','course.task=section10','-e','POSTGRES_PASSWORD=fixture','-e','POSTGRES_DB=compatibility','postgres:17@sha256:d74eeac9a635390a49bc21bd49fccd973de707e2a53a76ac49b552b8712ec46f');containers.push(db);
- await ready(db,['pg_isready','-U','postgres','-d','compatibility']);
+ await docker('run','-d','--name',db,'--network',network,'--label','course.task=section10','-e','POSTGRES_PASSWORD=fixture','-e','PGPASSWORD=fixture','-e','POSTGRES_DB=compatibility','postgres:17@sha256:d74eeac9a635390a49bc21bd49fccd973de707e2a53a76ac49b552b8712ec46f');containers.push(db);
+ volumes.push(...JSON.parse(await docker('inspect',db))[0].Mounts.filter(m=>m.Type==='volume').map(m=>m.Name));
+ await ready(db,['psql','-h','127.0.0.1','-U','postgres','-d','compatibility','-Atc','SELECT 1']);
  await sql("CREATE TABLE release_names (id integer PRIMARY KEY, legacy_name text NOT NULL); INSERT INTO release_names VALUES (1,'Original title');");
  const base=process.env.SECTION10_API_IMAGE||'section10-l01-api';
  const baseId=JSON.parse(await docker('image','inspect',base))[0].Id;
+ const baseTag=task+'-base';await docker('tag',baseId,baseTag);fixtureTags.push(baseTag);
  const fixtureImages={};
  for(const [version,name] of [['old',old],['new',fresh]]) {
   const tag=`${task}-${version}-image`;
-  await docker('build','-f','fixtures/release-compatibility/Dockerfile','--build-arg',`API_IMAGE=${baseId}`,'--build-arg',`FIXTURE_VERSION=${version}`,'-t',tag,'.');
+  await docker('buildx','build','--load','-f','fixtures/release-compatibility/Dockerfile','--build-arg',`API_IMAGE=${baseTag}`,'--build-arg',`FIXTURE_VERSION=${version}`,'-t',tag,'fixtures/release-compatibility');
+  fixtureTags.push(tag);
   fixtureImages[version]=JSON.parse(await docker('image','inspect',tag))[0].Id;
   await docker('run','-d','--name',name,'--network',network,'--label','course.task=section10','-e',`DATABASE_URL=postgresql://postgres:fixture@${db}:5432/compatibility`,tag);containers.push(name);
   await ready(name,['node','-e',"fetch('http://127.0.0.1:8080').then(()=>process.exit(0)).catch(()=>process.exit(1))"]);
@@ -32,11 +36,15 @@ try {
  await sql('ALTER TABLE release_names RENAME COLUMN legacy_name TO display_name');await observe('unsafe-rename');
  await sql('ALTER TABLE release_names RENAME COLUMN display_name TO legacy_name');await observe('restored');
  await sql('ALTER TABLE release_names ADD COLUMN display_name text; UPDATE release_names SET display_name=legacy_name; ALTER TABLE release_names ALTER COLUMN display_name SET NOT NULL');await observe('expanded');
- await sql('ALTER TABLE release_names DROP COLUMN legacy_name');await observe('contracted');
+ await docker('stop',old);
+ await sql('ALTER TABLE release_names DROP COLUMN legacy_name');
+ await docker('start',old); // deliberately test an unsupported old-version rollback
+ await ready(old,['node','-e',"fetch('http://127.0.0.1:8080').then(()=>process.exit(0)).catch(()=>process.exit(1))"]);await observe('contracted');
  await sql('ALTER TABLE release_names ADD COLUMN legacy_name text; UPDATE release_names SET legacy_name=display_name; ALTER TABLE release_names ALTER COLUMN legacy_name SET NOT NULL');await observe('safe-restored');
- result={fixture:'read-only name contract; not a product schema change',baseImageId:baseId,fixtureImages,matrix,sourceRestored:true,contractionObservation:'No old readers or writers; backfill verified; rollback window deliberately closed',rollback:'Old API cannot roll back after contraction without schema repair'};
+ result={fixture:'read-only name contract; not a product schema change',baseImageId:baseId,fixtureImages,matrix,sourceRestored:(await exec('git',['diff','--binary','HEAD'])).stdout===sourceBefore,contractionRequiredCondition:'No old readers or writers; backfill verified; rollback window deliberately closed',oldReaderStoppedBeforeContraction:true,contractedOldProbe:'Intentional unsupported rollback probe after stopping the old reader; writer behavior is outside this read-only fixture',rollback:'Old API cannot roll back after contraction without schema repair'};
 } finally {
- for(const name of containers.reverse())await docker('rm','-f',name);
+ for(const name of containers.reverse())await docker('rm','-f','-v',name);
+ for(const tag of fixtureTags)await docker('image','rm',tag);
  if(networkCreated)await docker('network','rm',network);
- if(result){result.cleanup={containersRemoved:!(await docker('ps','-a','--filter',`name=${task}`,'--format','{{.Names}}')),networkRemoved:!(await docker('network','ls','--filter',`name=${task}`,'--format','{{.Name}}'))};await writeFile(output,JSON.stringify(result,null,2)+'\n');}
+ if(result){result.cleanup={volumesRemoved:(await Promise.all(volumes.map(async volume=>{try{await docker('volume','inspect',volume);return false;}catch{return true;}}))).every(Boolean),containersRemoved:!(await docker('ps','-a','--filter',`name=${task}`,'--format','{{.Names}}')),fixtureImagesRemoved:(await Promise.all(fixtureTags.map(async tag=>{try{await docker('image','inspect',tag);return false;}catch{return true;}}))).every(Boolean),networkRemoved:!(await docker('network','ls','--filter',`name=${task}`,'--format','{{.Name}}'))};await writeFile(output,JSON.stringify(result,null,2)+'\n');}
 }

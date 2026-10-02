@@ -1,6 +1,6 @@
 import { createReadStream } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import { readFile, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
@@ -31,6 +31,25 @@ export async function verifyStaged(manifest,directory) {
   const hash=createHash('sha256');
   for await(const chunk of createReadStream(path.join(directory,artifact.archive)))hash.update(chunk);
   if(hash.digest('hex')!==artifact.archiveSha256)throw new Error(`Staged archive digest mismatch: ${artifact.name}`);
+  const archive=path.join(directory,artifact.archive);
+  const run=promisify(execFile);
+  const entries=JSON.parse((await run('tar',['-xOf',archive,'manifest.json'],{maxBuffer:1024*1024})).stdout);
+  if(!Array.isArray(entries)||entries.length!==1||!Array.isArray(entries[0].Layers))throw new Error('Invalid archive image manifest');
+  const configPath=entries[0].Config;
+  if(!/^(?:blobs\/sha256\/[a-f0-9]{64}|[a-f0-9]{64}\.json)$/.test(configPath??''))throw new Error('Invalid archive image config path');
+  const configBytes=(await run('tar',['-xOf',archive,configPath],{encoding:'buffer',maxBuffer:1024*1024})).stdout;
+  if('sha256:'+createHash('sha256').update(configBytes).digest('hex')!==artifact.imageId)throw new Error('Staged archive image identity mismatch');
+  const config=JSON.parse(configBytes.toString('utf8'));
+  const archivedLabels=config.config?.Labels;
+  if(archivedLabels?.['org.opencontainers.image.revision']!==artifact.sourceCommit||archivedLabels?.['course.artifact']!==artifact.name||archivedLabels?.['org.opencontainers.image.created']!==artifact.buildTime||archivedLabels?.['course.toolchain']!==artifact.toolchain||archivedLabels?.['org.opencontainers.image.source']!==artifact.source)throw new Error('Staged archive provenance mismatch');
+  if(entries[0].Layers.length!==config.rootfs?.diff_ids?.length)throw new Error('Invalid archive layer count');
+  for(const [index,layer] of entries[0].Layers.entries()) {
+   if(!/^(?:blobs\/sha256\/[a-f0-9]{64}|[a-f0-9]{64}\/layer\.tar)$/.test(layer))throw new Error('Invalid archive layer path');
+   const child=spawn('tar',['-xOf',archive,layer]);const hash=createHash('sha256');
+   const completion=new Promise((resolve,reject)=>{child.once('error',reject);child.once('close',code=>code===0?resolve():reject(new Error('Cannot read archived layer')));});
+   child.stderr.resume();for await(const chunk of child.stdout)hash.update(chunk);await completion;
+   if('sha256:'+hash.digest('hex')!==config.rootfs.diff_ids[index])throw new Error('Staged archive layer digest mismatch');
+  }
   const image=JSON.parse((await promisify(execFile)('docker',['image','inspect',artifact.imageId])).stdout)[0];
   const labels=image.Config.Labels;
   if(image.Id!==artifact.imageId||labels['org.opencontainers.image.revision']!==artifact.sourceCommit||labels['org.opencontainers.image.created']!==artifact.buildTime||labels['course.artifact']!==artifact.name||labels['course.toolchain']!==artifact.toolchain||labels['org.opencontainers.image.source']!==artifact.source)throw new Error(`Image provenance mismatch: ${artifact.name}`);

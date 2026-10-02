@@ -1,3 +1,5 @@
+import { execFileSync } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { authorizeEvent, publicationPlan } from '../../scripts/artifact-publication.mjs';
@@ -27,3 +29,14 @@ test('staged archive bytes cannot disagree with recorded digest', async()=>{
 });
 
 test('scoped same-repository push may stage a dry-run',()=>assert.equal(authorizeEvent({...event,name:'push'},source),true));
+test('a correctly hashed archive for another image is rejected',async()=>{
+ const {mkdtemp,writeFile,rm}=await import('node:fs/promises');const {tmpdir}=await import('node:os');const {join}=await import('node:path');const {createHash}=await import('node:crypto');const {verifyStaged}=await import('../../scripts/artifact-publication.mjs');
+ const directory=await mkdtemp(join(tmpdir(),'section10-wrong-image-'));
+ try {
+  const config='{}',id=createHash('sha256').update(config).digest('hex');
+  await writeFile(join(directory,id+'.json'),config);await writeFile(join(directory,'manifest.json'),JSON.stringify([{Config:id+'.json',Layers:[]}]));
+  const archive=join(directory,'api.docker.tar');execFileSync('tar',['-cf',archive,'-C',directory,'manifest.json',id+'.json']);
+  const archiveSha256=createHash('sha256').update(await readFile(archive)).digest('hex');
+  await assert.rejects(()=>verifyStaged({artifacts:[{...artifact('api'),archive:'api.docker.tar',archiveSha256}]},directory),/archive image identity/);
+ } finally {await rm(directory,{recursive:true,force:true});}
+});

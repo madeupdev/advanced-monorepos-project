@@ -23,9 +23,10 @@ try {
  for(const name of selection.deployables) {
   const tag=`section10-${sourceCommit.slice(0,12)}-${name}-${process.pid}`;
   const dockerfile=name==='migrations'?'prisma/Dockerfile':`apps/${name}/Dockerfile`;
-  const buildArgs=['build','-f',path.join(source,dockerfile),'--build-arg',`SOURCE_COMMIT=${sourceCommit}`,'--build-arg',`BUILD_TIME=${buildTime}`,'-t',tag];
+  const buildArgs=['buildx','build','--load','-f',path.join(source,dockerfile),'--build-arg',`SOURCE_COMMIT=${sourceCommit}`,'--build-arg',`BUILD_TIME=${buildTime}`,'-t',tag];
   if(args.includes('--no-cache'))buildArgs.push('--no-cache');
-  await exec('docker',[...buildArgs,source],{maxBuffer:100*1024*1024});
+  const build=await exec('docker',[...buildArgs,source],{maxBuffer:100*1024*1024});
+  await writeFile(path.join(output,`${name}.build.log`),build.stdout+build.stderr);
   const image=JSON.parse((await exec('docker',['image','inspect',tag])).stdout)[0];
   const labels=image.Config.Labels;
   if(labels['org.opencontainers.image.revision']!==sourceCommit||labels['course.artifact']!==name||labels['org.opencontainers.image.created']!==buildTime||labels['course.toolchain']!=='node24.18.0-pnpm11.17.0'||labels['org.opencontainers.image.source']!=='https://github.com/madeupdev/advanced-monorepos-project')throw new Error(`Image provenance mismatch ${name}`);
