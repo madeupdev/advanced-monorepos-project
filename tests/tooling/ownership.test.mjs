@@ -8,12 +8,12 @@ test('every actual project has verified review ownership and documented responsi
   const doc = await readFile(new URL('docs/architecture/ownership.md',root),'utf8');
   for (const path of paths) {
     const p = JSON.parse(await readFile(new URL(`${path}/project.json`,root),'utf8'));
-    assert.deepEqual(p.metadata?.owners, ['madeupdev'], path);
-    assert.ok(rules.split('\n').includes(`/${path}/ @madeupdev`), path);
+    assert.deepEqual(p.metadata?.owners, ['robdonn'], path);
+    assert.ok(rules.split('\n').includes(`/${path}/ @robdonn`), path);
     assert.ok(doc.includes(p.name), p.name);
   }
-  for (const path of ['.github','scripts','tools','prisma']) assert.ok(rules.includes(`/${path}/ @madeupdev`));
-  assert.ok(rules.split('\n').includes('* @madeupdev'));
+  for (const path of ['.github','scripts','tools','prisma']) assert.ok(rules.includes(`/${path}/ @robdonn`));
+  assert.ok(rules.split('\n').includes('* @robdonn'));
   assert.match(doc, /branch protection/i);
   assert.match(doc, /PosterArt/);
   assert.match(doc, /runtime.*dependency.*public contract.*ownership.*task/i);

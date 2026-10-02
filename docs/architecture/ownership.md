@@ -1,20 +1,20 @@
 # Ownership and project introduction
 
-The existing repository owner **@madeupdev** owns review and maintenance of these boundaries. GitHub repository identity and write permissions were verified during Section 11 development. No teams are invented. `.github/CODEOWNERS` routes reviews when the file is present on the PR base branch; required owner approval depends on separately configured branch protection. This work does not configure or claim that enforcement.
+The existing repository collaborator **@robdonn** owns review and maintenance of these boundaries. GitHub collaborator API verified this individual user has write access. The repository namespace is an organisation and cannot itself be named as a CODEOWNERS user; GitHub CODEOWNERS validation must also report zero errors. No teams are invented. `.github/CODEOWNERS` routes reviews when the file is present on the PR base branch; required owner approval depends on separately configured branch protection. This work does not configure or claim that enforcement.
 
 | Nx project | Responsibility | Review owner |
 | --- | --- | --- |
-| @madeup-video/storefront | Next pages, server composition and browser-facing storefront | @madeupdev |
-| @madeup-video/admin | Vite inventory administration UI | @madeupdev |
-| @madeup-video/api | Nest HTTP contract and server composition | @madeupdev |
-| @madeup-video/api-e2e | Real HTTP API compatibility checks | @madeupdev |
-| @madeup-video/admin-e2e | Admin browser journey | @madeupdev |
-| @madeup-video/contracts | Runtime schemas and consumer compatibility | @madeupdev |
-| @madeup-video/rental-domain | Framework-neutral rental decisions | @madeupdev |
-| @madeup-video/database | Server-only persistence and Prisma adapter | @madeupdev |
-| @madeup-video/ui | Modest reusable visual primitives | @madeupdev |
-| @madeup-video/testing | Test fixtures and shared test support | @madeupdev |
-| @madeup-video/repository-tooling | Lifecycle, configuration, validation, generators and recovery checks | @madeupdev |
+| @madeup-video/storefront | Next pages, server composition and browser-facing storefront | @robdonn |
+| @madeup-video/admin | Vite inventory administration UI | @robdonn |
+| @madeup-video/api | Nest HTTP contract and server composition | @robdonn |
+| @madeup-video/api-e2e | Real HTTP API compatibility checks | @robdonn |
+| @madeup-video/admin-e2e | Admin browser journey | @robdonn |
+| @madeup-video/contracts | Runtime schemas and consumer compatibility | @robdonn |
+| @madeup-video/rental-domain | Framework-neutral rental decisions | @robdonn |
+| @madeup-video/database | Server-only persistence and Prisma adapter | @robdonn |
+| @madeup-video/ui | Modest reusable visual primitives | @robdonn |
+| @madeup-video/testing | Test fixtures and shared test support | @robdonn |
+| @madeup-video/repository-tooling | Lifecycle, configuration, validation, generators and recovery checks | @robdonn |
 
 Root tooling also owns `scripts`, `tools`, CI, Prisma schema/migrations and repository guidance. A named maintainer reviews contract/runtime changes, fixes failed verification and keeps the commands runnable. Ownership is responsibility for a decision, not permission to ignore other consumers.
 
@@ -26,7 +26,7 @@ Evaluate runtime, dependency boundary, public contract, ownership and independen
 - **Library:** a reusable boundary with a deliberate public contract and independently useful validation. Runtime alone can justify server-only persistence separation even with one consumer.
 - **Internal module:** code that shares its parent's runtime, dependencies, owner, contract and validation responsibility. Keep it within that project.
 
-**Accept conditionally:** a framework-neutral rental policy consumed by two independently deployed applications, with a stable decision contract and focused tests. Owner @madeupdev; universal runtime; rental scope; contract/domain dependencies only. This is a proposed scenario, not approval to add a sixth permanent library. The generator demonstration is disposable.
+**Accept conditionally:** a framework-neutral rental policy consumed by two independently deployed applications, with a stable decision contract and focused tests. Owner @robdonn; universal runtime; rental scope; contract/domain dependencies only. This is a proposed scenario, not approval to add a sixth permanent library. The generator demonstration is disposable.
 
 **Reject:** extracting `PosterArt` into another project: it shares UI runtime, ownership, entry point and tests; keep it an internal UI module. Reject generic shared buckets and one library per folder. The five existing public libraries remain the approved architecture.
 
