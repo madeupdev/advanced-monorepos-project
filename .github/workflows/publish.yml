@@ -1,0 +1,179 @@
+name: Artifact publication dry-run
+
+on:
+  push:
+    branches: [codex/section-10-project]
+  workflow_dispatch:
+    inputs:
+      base:
+        description: Optional full ancestral source SHA for artifact comparison; empty builds all
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  validate:
+    if: github.repository == 'madeupdev/advanced-monorepos-project' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/codex/section-10'))
+    name: Validate dependency-aware monorepo
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/madeup_video?schema=public
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/madeup_video_test?schema=public
+      NX_DAEMON: 'false'
+      NX_NO_CLOUD: 'true'
+      NX_PREFER_NODE_STRIP_TYPES: 'false'
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: madeup_video
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready --username=postgres --dbname=madeup_video"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out explicit event head and history
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.17.0
+      - name: Install Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.18.0
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Isolate runner task state
+        shell: bash
+        run: |
+          echo "NX_CACHE_DIRECTORY=$RUNNER_TEMP/nx-cache" >> "$GITHUB_ENV"
+          echo "NX_WORKSPACE_DATA_DIRECTORY=$RUNNER_TEMP/nx-workspace" >> "$GITHUB_ENV"
+      - name: Install dependencies
+        run: corepack pnpm install --frozen-lockfile
+      - name: Find last successful default-branch validation
+        id: success
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          HEAD_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          # API uncertainty falls back to full validation; event.before is not a success boundary.
+          if gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?branch=$DEFAULT_BRANCH&event=push&status=success&per_page=100" > "$RUNNER_TEMP/successful-runs.json"; then
+            sha=$(jq -r --arg head "$HEAD_SHA" '.workflow_runs | map(select(.head_sha != $head)) | sort_by(.run_started_at) | reverse | .[0].head_sha // empty' "$RUNNER_TEMP/successful-runs.json")
+            if [[ "$sha" =~ ^[a-f0-9]{40}$ ]]; then echo "sha=$sha" >> "$GITHUB_OUTPUT"; fi
+          else
+            echo '::warning::Success history unavailable; full validation required.'
+          fi
+      - name: Calculate comparison range
+        id: range
+        env:
+          CI_EVENT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          LAST_SUCCESSFUL_SHA: ${{ steps.success.outputs.sha }}
+        run: node scripts/ci-base.mjs
+      - name: Create test database
+        run: docker exec "${{ job.services.postgres.id }}" createdb --username=postgres madeup_video_test
+      - name: Generate Prisma client
+        run: corepack pnpm db:generate
+      - name: Install Playwright Chromium
+        run: corepack pnpm exec playwright install --with-deps chromium
+      - name: Portable local-development tests
+        run: node --test tests/tooling/local-development.test.mjs
+      - name: Plan required validation
+        env:
+          CI_BASE: ${{ steps.range.outputs.base }}
+          CI_HEAD: ${{ steps.range.outputs.head }}
+          CI_FULL: ${{ steps.range.outputs.full }}
+        run: node scripts/ci-plan.mjs --output ci-plan.json
+      - name: Execute required validation
+        shell: bash
+        run: |
+          mkdir -p ci-results
+          set -o pipefail
+          node scripts/ci-plan.mjs --run --plan ci-plan.json 2>&1 | tee ci-results/validation.log
+      - name: Audit retained diagnostics
+        id: audit
+        if: always()
+        run: node scripts/ci-artifacts.mjs ci-plan.json ci-results test-results playwright-report
+      - name: Retain validation plan and reports
+        if: always() && steps.audit.outcome == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-diagnostics-${{ github.run_id }}
+          path: |
+            ci-plan.json
+            ci-results/
+          if-no-files-found: ignore
+          retention-days: 5
+      - name: Retain browser failure evidence
+        if: failure() && steps.audit.outcome == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-failure-evidence-${{ github.run_id }}
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+          retention-days: 5
+
+  stage:
+    name: Stage selected local artifacts (dry-run)
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.17.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.18.0
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Select deployables using verified comparison or conservative full selection
+        env:
+          CI_BASE: ${{ inputs.base }}
+          CI_HEAD: ${{ github.sha }}
+          TEST_DATABASE_URL: postgresql://plan:plan@127.0.0.1:5432/plan_test
+        run: |
+          if [ -n "$CI_BASE" ]; then
+            node scripts/affected-deployables.mjs --output deployables.json
+          else
+            node scripts/affected-deployables.mjs --full --output deployables.json
+          fi
+      - name: Build from clean committed source and stage local image archives
+        run: node scripts/build-artifacts.mjs --plan deployables.json --output staged
+      - name: Authorize dry-run and verify required provenance
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          node -e "require('fs').writeFileSync('event.json',JSON.stringify({name:process.env.EVENT_NAME,repository:process.env.EVENT_REPOSITORY,ref:process.env.EVENT_REF,sha:process.env.EVENT_SHA,mode:'dry-run'}))"
+          node scripts/artifact-publication.mjs --manifest staged/artifacts.json --plan deployables.json --event event.json --output dry-run.json
+      - uses: actions/upload-artifact@v7
+        with:
+          name: artifact-dry-run-${{ github.run_id }}
+          path: |
+            staged/
+            deployables.json
+            dry-run.json
+          retention-days: 2
