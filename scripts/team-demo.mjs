@@ -18,6 +18,8 @@ export async function runDemo(mode,{cwd=process.cwd()}={}) {
   const report={mode,observations:[],checks:[],cleanup:{}};
   const cache=path.join(temporary,'cache'),workspace=path.join(temporary,'workspace-data');
   const env={...process.env,NX_DAEMON:'false',NX_NO_CLOUD:'true',NX_TUI:'false',NX_INTERACTIVE:'false',NX_PREFER_NODE_STRIP_TYPES:'false',NX_CACHE_DIRECTORY:cache,NX_WORKSPACE_DATA_DIRECTORY:workspace,TEST_DATABASE_URL:process.env.TEST_DATABASE_URL||'postgresql://fixture:fixture@127.0.0.1:5432/section11_test',NODE_PATH:[path.join(cwd,'node_modules/nx/node_modules'),path.join(cwd,'node_modules'),path.join(cwd,'node_modules/.pnpm/node_modules')].join(path.delimiter)};
+  // Nested validation is a standalone process, not a child of Node's test harness.
+  delete env.NODE_TEST_CONTEXT;
   const run=(label,args,expected=0)=>{
     const result=spawnSync(process.execPath,args,{cwd:source,env,encoding:'utf8',maxBuffer:64*1024*1024,timeout:120000});
     if(result.error)throw result.error;
