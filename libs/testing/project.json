@@ -3,5 +3,14 @@
   "name": "@madeup-video/testing",
   "projectType": "library",
   "sourceRoot": "libs/testing/src",
-  "tags": ["type:test", "runtime:server", "scope:shared"]
+  "tags": [
+    "type:test",
+    "runtime:server",
+    "scope:shared"
+  ],
+  "metadata": {
+    "owners": [
+      "robdonn"
+    ]
+  }
 }

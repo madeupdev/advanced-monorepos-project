@@ -3,8 +3,14 @@
   "name": "@madeup-video/api-e2e",
   "projectType": "application",
   "sourceRoot": "apps/api-e2e/src",
-  "tags": ["type:test", "runtime:server", "scope:rental"],
-  "implicitDependencies": ["@madeup-video/api"],
+  "tags": [
+    "type:test",
+    "runtime:server",
+    "scope:rental"
+  ],
+  "implicitDependencies": [
+    "@madeup-video/api"
+  ],
   "targets": {
     "lint": {
       "executor": "nx:run-commands",
@@ -38,5 +44,10 @@
         "parallel": false
       }
     }
+  },
+  "metadata": {
+    "owners": [
+      "robdonn"
+    ]
   }
 }

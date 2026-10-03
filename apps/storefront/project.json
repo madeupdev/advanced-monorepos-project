@@ -3,7 +3,11 @@
   "name": "@madeup-video/storefront",
   "projectType": "application",
   "sourceRoot": "apps/storefront",
-  "tags": ["type:app", "runtime:universal", "scope:storefront"],
+  "tags": [
+    "type:app",
+    "runtime:universal",
+    "scope:storefront"
+  ],
   "implicitDependencies": [
     "@madeup-video/rental-domain",
     "@madeup-video/testing"
@@ -16,10 +20,18 @@
         "^default",
         "{workspaceRoot}/prisma/**/*",
         "{workspaceRoot}/prisma.config.ts",
-        { "env": "API_PORT" },
-        { "env": "STOREFRONT_PORT" },
-        { "env": "API_URL" },
-        { "env": "NEXT_PUBLIC_API_URL" }
+        {
+          "env": "API_PORT"
+        },
+        {
+          "env": "STOREFRONT_PORT"
+        },
+        {
+          "env": "API_URL"
+        },
+        {
+          "env": "NEXT_PUBLIC_API_URL"
+        }
       ],
       "outputs": [
         "{projectRoot}/.next/!(cache)",
@@ -40,7 +52,9 @@
       "continuous": true,
       "dependsOn": [
         {
-          "projects": ["@madeup-video/api"],
+          "projects": [
+            "@madeup-video/api"
+          ],
           "target": "dev"
         }
       ],
@@ -125,5 +139,10 @@
         "parallel": false
       }
     }
+  },
+  "metadata": {
+    "owners": [
+      "robdonn"
+    ]
   }
 }

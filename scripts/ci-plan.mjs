@@ -59,6 +59,21 @@ function hasTarget(node, target) {
   return Boolean(node?.data?.targets?.[target] ?? node?.targets?.[target]);
 }
 
+function projectType(node) {
+  return node?.data?.projectType ?? node?.projectType;
+}
+
+function libraryTestTargets(nodes, projects) {
+  return projects
+    .filter((name) => {
+      const node = nodes[name];
+      const root = projectRoot(node).replaceAll('\\', '/').replace(/\/$/, '');
+      return projectType(node) === 'library' && root.startsWith('libs/') && hasTarget(node, 'test');
+    })
+    .map((name) => targetName(name, 'test'))
+    .sort();
+}
+
 async function nxJson(args, env, description) {
   try {
     const result = await execFileAsync(process.execPath, [nxBin, ...args], {
@@ -139,9 +154,10 @@ function requiredTargetOwners(nodes) {
 function selectedTargets(nodes, projects, full) {
   const names = full ? Object.keys(nodes) : projects;
   const selected = new Set(names);
+  const libraryTests = libraryTestTargets(nodes, names);
   const typechecks = names.filter((name) => selected.has(name) && hasTarget(nodes[name], 'typecheck')).sort();
   const builds = names.filter((name) => selected.has(name) && hasTarget(nodes[name], 'build')).sort();
-  const tasks = [toolingTarget, ...typechecks.map((name) => targetName(name, 'typecheck')), ...builds.map((name) => targetName(name, 'build'))];
+  const tasks = [toolingTarget, ...libraryTests, ...typechecks.map((name) => targetName(name, 'typecheck')), ...builds.map((name) => targetName(name, 'build'))];
   const storefront = selected.has(`${prefix}storefront`);
   const api = selected.has(`${prefix}api`);
   const database = selected.has(`${prefix}database`);
@@ -154,6 +170,27 @@ function selectedTargets(nodes, projects, full) {
   if (full || storefront || api) tasks.push(`${prefix}storefront:test:e2e`);
   if (full || admin || adminE2e || api) tasks.push(`${prefix}admin-e2e:test`);
   return tasks;
+}
+
+async function createLibraryTestPlan(cwd = process.cwd()) {
+  const nx = await createNxEnvironment(cwd);
+  try {
+    const graph = await nxGraph(nx);
+    const nodes = graphNodes(graph);
+    const projects = Object.keys(nodes).sort();
+    const tasks = libraryTestTargets(nodes, projects);
+    return {
+      full: true,
+      reason: 'source-library test validation',
+      files: [],
+      projects,
+      global: [],
+      tasks,
+      count: tasks.length,
+    };
+  } finally {
+    await rm(nx.tempRoot, { recursive: true, force: true });
+  }
 }
 
 export async function createPlan({ files, full = false, cwd = process.cwd() }) {
@@ -198,13 +235,13 @@ function parseFilesArgument(value) {
   return value.split(',');
 }
 
-function readPlan(value) {
+export function readPlan(value) {
   const plan = parseJson(value, 'plan');
   if (!plan || typeof plan !== 'object' || !Array.isArray(plan.global) || !Array.isArray(plan.tasks)) fail('Plan metadata is missing global/tasks arrays');
   if (plan.global.length !== 1 || plan.global[0] !== 'lint' || !plan.tasks.includes(toolingTarget)) fail('Plan is missing required global lint/tooling gates');
   const allowedSuites = new Set([toolingTarget, `${prefix}storefront:test:unit`, ...requiredSuites]);
   for (const target of plan.tasks) {
-    if (typeof target !== 'string' || (!allowedSuites.has(target) && !/^@madeup-video\/[A-Za-z0-9-]+:(typecheck|build)$/.test(target))) fail(`Plan contains unsupported target: ${target}`);
+    if (typeof target !== 'string' || (!allowedSuites.has(target) && !/^@madeup-video\/[A-Za-z0-9-]+:(test|typecheck|build)$/.test(target))) fail(`Plan contains unsupported target: ${target}`);
   }
   if (new Set(plan.tasks).size !== plan.tasks.length) fail('Plan contains duplicate tasks');
   return plan;
@@ -225,6 +262,17 @@ async function cli(argv) {
   const outputIndex = argv.indexOf('--output');
   const planIndex = argv.indexOf('--plan');
   const full = argv.includes('--full') || /^(1|true|yes)$/i.test(process.env.CI_FULL || '');
+  if (argv.includes('--library-tests')) {
+    const plan = await createLibraryTestPlan(process.cwd());
+    process.stdout.write(`${JSON.stringify(plan, null, 2)}\n`);
+    for (const target of plan.tasks) {
+      const start = performance.now();
+      console.log(`CI task start: ${target}`);
+      await runTarget(target, process.cwd());
+      console.log(`CI task finish: ${JSON.stringify({ target, durationMs: Math.round(performance.now() - start), status: 'passed' })}`);
+    }
+    return;
+  }
   if (argv.includes('--run')) {
     if (planIndex < 0 || !argv[planIndex + 1]) fail('--run requires --plan <json>');
     const plan = readPlan(await readFile(argv[planIndex + 1], 'utf8'));

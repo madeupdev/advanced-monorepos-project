@@ -1,0 +1,18 @@
+# Existing repository owner; review routing does not configure branch protection.
+* @robdonn
+/apps/storefront/ @robdonn
+/apps/admin/ @robdonn
+/apps/api/ @robdonn
+/apps/api-e2e/ @robdonn
+/apps/admin-e2e/ @robdonn
+/libs/contracts/ @robdonn
+/libs/rental-domain/ @robdonn
+/libs/database/ @robdonn
+/libs/ui/ @robdonn
+/libs/testing/ @robdonn
+/tests/tooling/ @robdonn
+/.github/ @robdonn
+/scripts/ @robdonn
+/tools/ @robdonn
+/prisma/ @robdonn
+/AGENTS.md @robdonn
