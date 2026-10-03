@@ -35,3 +35,5 @@ Evaluate runtime, dependency boundary, public contract, ownership and independen
 Import library `src/index.ts` through its root `@madeup-video/*` alias; never deep-import a consumer's internals. Inspect `pnpm exec nx graph --file=stdout`, run enforced `pnpm lint`, focused checks, then required global gates. Repository tooling and generated source do not become application runtime dependencies. CODEOWNERS last-match semantics matter; explicit paths and the fallback currently resolve to the same verified owner.
 
 [GitHub CODEOWNERS documentation](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners).
+
+Before permanently adopting a generated library, inspect affected and full CI plans for its declared test target. `pnpm test:all` discovers source-library test targets through Nx metadata; a test target must be executed by required validation, not merely present in configuration.

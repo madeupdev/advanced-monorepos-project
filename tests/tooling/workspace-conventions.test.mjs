@@ -11,7 +11,8 @@ test('accepts independently verifiable generated source metadata',()=>assert.dee
 for(const [label,mutate,pattern] of [
  ['missing owner',x=>delete x.nodes['@madeup-video/policy'].data.metadata,/owner/],
  ['invented owner',x=>x.nodes['@madeup-video/policy'].data.metadata.owners=['invented'],/owner/],
- ['missing runtime',x=>x.nodes['@madeup-video/policy'].data.tags.pop(),/scope/],
+ ['missing runtime',x=>x.nodes['@madeup-video/policy'].data.tags=x.nodes['@madeup-video/policy'].data.tags.filter(tag=>!tag.startsWith('runtime:')),/runtime/],
+ ['missing scope',x=>x.nodes['@madeup-video/policy'].data.tags.pop(),/scope/],
  ['contradictory runtime',x=>x.nodes['@madeup-video/policy'].data.tags.push('runtime:server'),/runtime/],
  ['unsupported metadata',x=>x.nodes['@madeup-video/policy'].data.tags=['type:domain','runtime:server','scope:rental'],/combination/],
  ['deep alias',x=>x.aliases['@madeup-video/policy']=['./libs/policy/src/lib/policy.ts'],/alias/],

@@ -33,7 +33,7 @@ export async function runDemo(mode,{cwd=process.cwd()}={}) {
       const data=await readFile(path.join(cwd,f));hashes.set(f,createHash('sha256').update(data).digest('hex'));
       await mkdir(path.dirname(path.join(source,f)),{recursive:true});await cp(path.join(cwd,f),path.join(source,f));
     }
-    await symlink(path.join(cwd,'node_modules'),path.join(source,'node_modules'),'dir');
+    await symlink(path.resolve(cwd,'node_modules'),path.join(source,'node_modules'),process.platform==='win32'?'junction':'dir');
     const initial=graph();
     if(mode==='library') {
       nx('generate library',['g',`${path.join(source,'tools/generators.json')}:library`,'--name=rental-policy','--type=domain','--runtime=universal','--scope=rental','--owner=robdonn','--interactive=false']);
@@ -42,11 +42,19 @@ export async function runDemo(mode,{cwd=process.cwd()}={}) {
       for(const target of ['test','typecheck'])nx(`focused ${target}`,['run',`@madeup-video/rental-policy:${target}`,'--skip-nx-cache']);
       run('generated boundary lint',['scripts/lint.mjs','libs/rental-policy']);
       run('generated metadata',['scripts/workspace-conventions.mjs']);
+      for(const [label,args] of [['generated affected plan',['--files','libs/rental-policy/src/index.ts']],['generated full plan',['--full']]]) {
+        const plan=JSON.parse(run(label,['scripts/ci-plan.mjs',...args]));assert.ok(plan.tasks.includes('@madeup-video/rental-policy:test'));
+      }
+      run('required library tests',['scripts/ci-plan.mjs','--library-tests']);
+      const testFile=path.join(source,'libs/rental-policy/src/lib/rental-policy.test.ts'),originalTest=await readFile(testFile,'utf8');
+      await writeFile(testFile,originalTest.replace('strictEqual','notStrictEqual'));
+      run('required runner rejects broken generated test',['scripts/ci-plan.mjs','--library-tests'],1);
+      await writeFile(testFile,originalTest);run('required generated test repaired',['scripts/ci-plan.mjs','--library-tests']);
       await rm(path.join(source,'libs/rental-policy'),{recursive:true});
       const ts=await json(path.join(source,'tsconfig.base.json'));delete ts.compilerOptions.paths['@madeup-video/rental-policy'];await put(path.join(source,'tsconfig.base.json'),ts);
       await rm(workspace,{recursive:true,force:true});
       assert.deepEqual(Object.keys(graph().nodes).sort(),Object.keys(initial.nodes).sort());
-      report.observations.push({generatedDiscovered:true,focusedValidationPassed:true,originalProjectInventoryRestored:true});
+      report.observations.push({generatedDiscovered:true,focusedValidationPassed:true,generatedTestRequiredByCi:true,requiredRunnerRejectedBrokenTest:true,originalProjectInventoryRestored:true});
     }
     if(mode==='drift') {
       const root='libs/bypassed-policy';await mkdir(path.join(source,root,'src'),{recursive:true});
