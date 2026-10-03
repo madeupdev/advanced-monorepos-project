@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "courseVersion": "1.0.0",
+  "cliVersion": "1.0.0",
+  "cli": {
+    "packageName": "@madeup-video/course",
+    "repository": "https://github.com/madeupdev/madeup-video-course-cli"
+  },
+  "project": {
+    "packageName": "@madeup-video/storefront",
+    "repository": "https://github.com/madeupdev/advanced-monorepos-project",
+    "localArtifacts": [
+      {
+        "type": "file",
+        "path": ".env"
+      },
+      {
+        "type": "file",
+        "path": ".env.local"
+      },
+      {
+        "type": "file",
+        "path": ".env.test"
+      },
+      {
+        "type": "file",
+        "path": "next-env.d.ts"
+      },
+      {
+        "type": "directory",
+        "path": "generated/prisma"
+      },
+      {
+        "type": "directory",
+        "path": "playwright-report"
+      },
+      {
+        "type": "directory",
+        "path": "test-results"
+      },
+      {
+        "type": "directory-name",
+        "name": ".next"
+      },
+      {
+        "type": "directory-name",
+        "name": "coverage"
+      },
+      {
+        "type": "directory-name",
+        "name": "node_modules"
+      },
+      {
+        "type": "file-suffix",
+        "suffix": ".tsbuildinfo"
+      }
+    ]
+  },
+  "release": {
+    "repository": "https://github.com/madeupdev/advanced-monorepos-project",
+    "tag": "course-v1.0.0",
+    "maxAssetBytes": 104857600
+  },
+  "states": [
+    {
+      "id": "S10-final-v2",
+      "sourceCommit": "1cf0df65825cb849c780c82bcde01d4fa86a7e0b",
+      "asset": "S10-final-v2.tar.gz",
+      "sha256": "ed276d36a41b666d6eeafff036176395c8d72a0a7b1b98eacc9af0aa37900979",
+      "status": "draft",
+      "verification": [
+        "pnpm lint",
+        "pnpm typecheck",
+        "pnpm test:all",
+        "pnpm build"
+      ],
+      "authoringNotes": "Corrected recovery includes reviewed timestamp validation and every selected image credential check; final also uses push comparison. Two private deterministic builds verified. New canonical ancestry awaits correction integration; original identities preserved."
+    },
+    {
+      "id": "S11-L01-ownership-defined-v2",
+      "sourceCommit": "7335b069f1f3646e4170b17d76d38ad86c25bff2",
+      "asset": "S11-L01-ownership-defined-v2.tar.gz",
+      "sha256": "c3ffdcfa70f5647fae15425f22bb86a3c3fdb854ef30f0968a9a73f10fd34e46",
+      "status": "draft",
+      "verification": [
+        "pnpm lint",
+        "pnpm typecheck",
+        "pnpm test:all",
+        "pnpm build"
+      ],
+      "authoringNotes": "Corrected verified individual CODEOWNER. Original S11 identities remain historical drafts. Canonical integration and publication gates remain open."
+    },
+    {
+      "id": "S11-L02-conventions-encoded-v3",
+      "sourceCommit": "729507b38a76beafe38554c41b7058f73bee457a",
+      "asset": "S11-L02-conventions-encoded-v3.tar.gz",
+      "sha256": "217b5579c31174f1ec6d505c3ef2d76bb6752b17829139bab3fa8a96f0f461d5",
+      "status": "draft",
+      "verification": [
+        "pnpm lint",
+        "pnpm typecheck",
+        "pnpm test:all",
+        "pnpm build"
+      ],
+      "authoringNotes": "PR12 review correction: generated tests are required by affected/full CI and root full validation; Windows demo uses junction; runtime/scope regressions separate. Historical identities retained. Integration and publication remain separate."
+    },
+    {
+      "id": "S11-L03-contributors-guided-v4",
+      "sourceCommit": "c926b5a1b660fe471629f7025c9c38eb71277233",
+      "asset": "S11-L03-contributors-guided-v4.tar.gz",
+      "sha256": "1c5241a5d67ee5c3540a118fd9236057e58988aefde611bd39b3bdd2ac377be9",
+      "status": "draft",
+      "verification": [
+        "pnpm lint",
+        "pnpm typecheck",
+        "pnpm test:all",
+        "pnpm build"
+      ],
+      "authoringNotes": "PR12 review correction: generated tests are required by affected/full CI and root full validation; Windows demo uses junction; runtime/scope regressions separate. Historical identities retained. Integration and publication remain separate."
+    },
+    {
+      "id": "S11-final-v4",
+      "sourceCommit": "c926b5a1b660fe471629f7025c9c38eb71277233",
+      "asset": "S11-final-v4.tar.gz",
+      "sha256": "1c5241a5d67ee5c3540a118fd9236057e58988aefde611bd39b3bdd2ac377be9",
+      "status": "draft",
+      "verification": [
+        "pnpm lint",
+        "pnpm typecheck",
+        "pnpm test:all",
+        "pnpm build"
+      ],
+      "authoringNotes": "PR12 review correction: generated tests are required by affected/full CI and root full validation; Windows demo uses junction; runtime/scope regressions separate. Historical identities retained. Integration and publication remain separate."
+    }
+  ],
+  "recipes": [],
+  "authoringNotes": "All Section 1-7 delivery states remain unpublished drafts. Sections 4, 5, 6, and 7 have verified private rehearsal evidence from independent deterministic archive builds and isolated rehearsal verification; publication remains a separate deliberate task. Native Windows, real WSL, and the installed course-CLI learner flow remain unexecuted release gates for Section 7. Section 8 states remain private drafts. Project PR #2 merged all four source commits into canonical origin/main; the production builder reproduced their registered digests and the read-only synchronizer check found no public-manifest changes. Private installed-candidate recovery on macOS has passed, using a temporary private manifest and local transport interception. Recovery using the exact published package and real release URLs remains unverified. Native Windows and real WSL Section 8 recovery remain unverified. CLI evidence: https://github.com/madeupdev/madeup-video-course-cli/blob/2dcd4dc53b9f40923f604f521fbf05453e83c376/docs/evidence/2026-09-25-section-8-installed-recovery.md. Section 9 feature sources remain private drafts. Final source passed hosted validation and all five representative hosted scenarios; the controlled failure uploaded audited diagnostics that were downloaded and inspected. All twelve fresh transition/section rehearsals passed, and private installed-candidate recovery passed twice per state on macOS. Section 9 source commits are now ancestral to canonical origin/main after project PR #3 merged. Native Windows/real WSL and exact published-package recovery remain open. No merge or publication is authorized by this development task. Section 10 has three immutable private draft states; L02 reuses L01. Two deterministic archive builds and all six extracted source/mode audits passed. Nine fresh transitions and two complete-section Linux rehearsals passed and were independently audited under docs/evidence/section-10. Section 10 canonical ancestry, native Windows/real WSL, exact published package/URLs and recovery publication remain separate gates."
+}
